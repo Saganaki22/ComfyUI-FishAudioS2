@@ -150,7 +150,7 @@ pip install -r requirements.txt
    - Add `Fish S2 Multi-Speaker TTS` node
    - Set number of speakers (2-10)
    - Connect reference audio for each speaker
-   - Use `<|speaker:0|>`, `<|speaker:1|>` tokens in text
+   - Use `[speaker_1]:`, `[speaker_2]:` tokens in text
    - Run!
 
 ---
@@ -208,9 +208,8 @@ Multi-speaker conversation synthesis.
 
 **Text Format:**
 ```
-<|speaker:0|>Hello, I'm speaker one.
-<|speaker:1|>And I'm speaker two!
-<|speaker:0|>[laugh] Nice to meet you.
+[speaker_1]: Hello, I'm speaker one.
+[speaker_2]: And I'm speaker two!
 ```
 
 **Outputs:**
