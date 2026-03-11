@@ -9,7 +9,7 @@ Required pip packages are auto-installed on startup.
 Model weights are auto-downloaded from HuggingFace on first inference.
 """
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 import logging
 import subprocess
