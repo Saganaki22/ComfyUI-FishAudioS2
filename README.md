@@ -19,6 +19,10 @@
 
 ---
 
+<img width="2172" height="1225" alt="image" src="https://github.com/user-attachments/assets/d599d527-a0b0-4074-b958-47abbcedf98c" />
+
+---
+
 ## 🎵 Overview
 
 **Fish Audio S2 Pro** is a state-of-the-art text-to-speech model with fine-grained inline control of prosody and emotion. Trained on 10M+ hours of audio data across **83 languages** with **1500+ emotive tags**, it combines reinforcement learning alignment with a Dual-Autoregressive architecture for speech that sounds natural, realistic, and emotionally rich.
