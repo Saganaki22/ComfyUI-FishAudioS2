@@ -84,8 +84,22 @@ class TTSInferenceEngine(ReferenceLoader, VQManager):
         segments = []
 
         while True:
-            # Get the response from the LLAMA model
-            wrapped_result: WrappedGenerateResponse = response_queue.get()
+            # Get the response from the LLAMA model.
+            # Use a timeout so the main thread can periodically check for
+            # ComfyUI interrupts (cancel button) without blocking forever.
+            wrapped_result = None
+            while wrapped_result is None:
+                try:
+                    wrapped_result = response_queue.get(timeout=0.1)
+                except Exception:
+                    pass
+                # Check if ComfyUI has requested cancellation
+                try:
+                    import comfy.model_management as _mm
+                    _mm.throw_exception_if_processing_interrupted()
+                except ImportError:
+                    pass
+
             if wrapped_result.status == "error":
                 yield InferenceResult(
                     code="error",
