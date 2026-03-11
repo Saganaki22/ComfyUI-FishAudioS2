@@ -51,7 +51,7 @@ MAX_SPEAKERS = 10
 # ---------------------------------------------------------------------------
 
 def _speaker_inputs(count: int) -> list:
-    """Return IO input descriptors for `count` speakers."""
+    """Return IO input descriptors for `count` speakers (1-indexed for UI)."""
     inputs = []
     for i in range(1, count + 1):
         inputs.append(
@@ -60,7 +60,7 @@ def _speaker_inputs(count: int) -> list:
                 optional=True,
                 tooltip=(
                     f"Reference audio for speaker {i}. "
-                    f"Use <|speaker:{i - 1}|> in your text for this voice."
+                    f"Use [speaker_{i}]: in your text for this voice."
                 ),
             )
         )
@@ -77,6 +77,18 @@ def _speaker_inputs(count: int) -> list:
             )
         )
     return inputs
+
+
+def _convert_speaker_tags(text: str) -> str:
+    """Convert user-friendly [speaker_N]: tags to model's <|speaker:N-1|> format."""
+    import re
+    
+    def replace_tag(m):
+        n = int(m.group(1))
+        colon = m.group(2) or ""
+        return f"<|speaker:{n - 1}|>{colon}"
+    
+    return re.sub(r'\[speaker_(\d+)\](:)?', replace_tag, text)
 
 
 # ---------------------------------------------------------------------------
@@ -128,12 +140,12 @@ if _V3:
                         "text",
                         multiline=True,
                         default=(
-                            "<|speaker:0|>Hello, I'm speaker one.\n"
-                            "<|speaker:1|>And I'm speaker two!"
+                            "[speaker_1]: Hello, I'm speaker one.\n"
+                            "[speaker_2]: And I'm speaker two!"
                         ),
                         tooltip=(
-                            "Multi-speaker text. Use <|speaker:0|>, "
-                            "<|speaker:1|>, ... to assign lines to each "
+                            "Multi-speaker text. Use [speaker_1]:, "
+                            "[speaker_2]:, ... to assign lines to each "
                             "connected speaker. Supports inline tags: "
                             "[laugh], [whisper], etc."
                         ),
@@ -214,6 +226,11 @@ if _V3:
                             "Not supported on Windows."
                         ),
                     ),
+                    IO.Float.Input(
+                        "pause_after_speaker",
+                        default=0.4, min=0.0, max=2.0, step=0.1,
+                        tooltip="Seconds of silence to add after each speaker turn.",
+                    ),
                     IO.DynamicCombo.Input(
                         "num_speakers",
                         options=speaker_options,
@@ -246,6 +263,7 @@ if _V3:
             seed: int,
             keep_model_loaded: bool,
             compile_model: bool,
+            pause_after_speaker: float,
             num_speakers: dict,
         ) -> IO.NodeOutput:
             _check_interrupt()
@@ -273,11 +291,15 @@ if _V3:
                 if speaker_audio is None:
                     logger.warning(
                         f"speaker_{i}_audio not connected — "
-                        f"<|speaker:{i - 1}|> will use a random voice."
+                        f"[speaker_{i}] will use a random voice."
+                    )
+                    references.append(
+                        ServeReferenceAudio(audio=b"", text="")
                     )
                 else:
                     logger.info(f"Encoding reference audio for speaker {i}...")
                     ref_bytes = audio_bytes_from_comfy(speaker_audio)
+                    logger.debug(f"Speaker {i} audio bytes: {len(ref_bytes)}")
                     references.append(
                         ServeReferenceAudio(
                             audio=ref_bytes,
@@ -291,7 +313,9 @@ if _V3:
 
             _check_interrupt()
 
-            prompt_text = f"[{language}] {text}" if language != "auto" else text
+            prompt_text = _convert_speaker_tags(text)
+            if language != "auto":
+                prompt_text = f"[{language}] {prompt_text}"
             actual_seed = seed
             tokens = max_new_tokens if max_new_tokens > 0 else 0
 
@@ -305,7 +329,7 @@ if _V3:
                 repetition_penalty=repetition_penalty,
                 temperature=temperature,
                 seed=actual_seed,
-                streaming=False,
+                streaming=True,
                 format="wav",
             )
 
@@ -317,17 +341,31 @@ if _V3:
                 f"Multi-speaker TTS ({n} speakers): "
                 f"{text[:80]}{'...' if len(text) > 80 else ''}"
             )
-            audio_out = None
+            segments = []
             sample_rate = 44100
 
             for result in engine.inference(request):
                 if result.code == "error":
                     raise RuntimeError(f"Fish S2 error: {result.error}")
+                if result.code == "segment":
+                    sr, seg = result.audio
+                    segments.append((sr, seg))
                 if result.code == "final":
                     sample_rate, audio_out = result.audio
 
-            if audio_out is None:
+            if len(segments) == 0 and audio_out is None:
                 raise RuntimeError("No audio produced.")
+
+            if len(segments) > 0 and pause_after_speaker > 0:
+                import numpy as np
+                silence_samples = int(pause_after_speaker * sample_rate)
+                silence = np.zeros(silence_samples, dtype=np.float32)
+                audio_segments = [s[1] for s in segments]
+                audio_out = audio_segments[0]
+                for seg in audio_segments[1:]:
+                    audio_out = np.concatenate([audio_out, silence, seg], axis=0)
+            elif audio_out is None:
+                audio_out = np.concatenate([s[1] for s in segments], axis=0)
 
             output = numpy_audio_to_comfy(audio_out, sample_rate)
 
@@ -360,7 +398,7 @@ else:
                 optional_inputs[f"speaker_{i}_audio"] = ("AUDIO", {
                     "tooltip": (
                         f"Reference audio for speaker {i}. "
-                        f"Use <|speaker:{i - 1}|> in text."
+                        f"Use [speaker_{i}]: in text."
                     ),
                 })
                 optional_inputs[f"speaker_{i}_ref_text"] = ("STRING", {
@@ -375,8 +413,8 @@ else:
                     "text": ("STRING", {
                         "multiline": True,
                         "default": (
-                            "<|speaker:0|>Hello, I'm speaker one.\n"
-                            "<|speaker:1|>And I'm speaker two!"
+                            "[speaker_1]: Hello, I'm speaker one.\n"
+                            "[speaker_2]: And I'm speaker two!"
                         ),
                     }),
                     "num_speakers": ("INT", {
@@ -385,9 +423,13 @@ else:
                     }),
                     "language": (LANGUAGES, {"default": "auto"}),
                     "device": (["auto", "cuda", "cpu", "mps"], {"default": "auto"}),
-                    "precision": (["bfloat16", "float16", "float32"], {"default": "bfloat16"}),
+                    "precision": (["auto", "bfloat16", "float16", "float32"], {"default": "auto"}),
                     "attention": (["auto", "sdpa", "sage_attention", "flash_attention"], {"default": "auto"}),
                     **COMMON_GENERATION_INPUTS,
+                    "pause_after_speaker": ("FLOAT", {
+                        "default": 0.4, "min": 0.0, "max": 5.0, "step": 0.1,
+                        "tooltip": "Seconds of silence to add after each speaker's turn.",
+                    }),
                     "keep_model_loaded": ("BOOLEAN", {"default": True}),
                     "compile_model": ("BOOLEAN", {"default": False}),
                 },
@@ -404,7 +446,7 @@ else:
             self,
             model_path, text, num_speakers, language, device, precision, attention,
             max_new_tokens, chunk_length, temperature, top_p, repetition_penalty,
-            seed, keep_model_loaded, compile_model, **kwargs,
+            seed, pause_after_speaker, keep_model_loaded, compile_model, **kwargs,
         ):
             _check_interrupt()
             if not text.strip():
@@ -425,10 +467,14 @@ else:
                 if speaker_audio is None:
                     logger.warning(
                         f"speaker_{i}_audio not connected — "
-                        f"<|speaker:{i - 1}|> will use a random voice."
+                        f"[speaker_{i}] will use a random voice."
+                    )
+                    references.append(
+                        ServeReferenceAudio(audio=b"", text="")
                     )
                 else:
                     ref_bytes = audio_bytes_from_comfy(speaker_audio)
+                    logger.debug(f"Speaker {i} audio bytes: {len(ref_bytes)}")
                     references.append(
                         ServeReferenceAudio(audio=ref_bytes, text=speaker_ref_text.strip())
                     )
@@ -437,7 +483,9 @@ else:
                     pbar.update_absolute(step, total_steps)
 
             _check_interrupt()
-            prompt_text = f"[{language}] {text}" if language != "auto" else text
+            prompt_text = _convert_speaker_tags(text)
+            if language != "auto":
+                prompt_text = f"[{language}] {prompt_text}"
             actual_seed = seed
             tokens = max_new_tokens if max_new_tokens > 0 else 0
 
@@ -445,23 +493,38 @@ else:
                 text=prompt_text, references=references, reference_id=None,
                 max_new_tokens=tokens, chunk_length=chunk_length, top_p=top_p,
                 repetition_penalty=repetition_penalty, temperature=temperature,
-                seed=actual_seed, streaming=False, format="wav",
+                seed=actual_seed, streaming=True, format="wav",
             )
 
             step += 1
             if pbar:
                 pbar.update_absolute(step, total_steps)
 
-            audio_out = None
+            segments = []
             sample_rate = 44100
+            audio_out = None
             for result in engine.inference(request):
                 if result.code == "error":
                     raise RuntimeError(f"Fish S2 error: {result.error}")
+                if result.code == "segment":
+                    sr, seg = result.audio
+                    segments.append((sr, seg))
                 if result.code == "final":
                     sample_rate, audio_out = result.audio
 
-            if audio_out is None:
+            if len(segments) == 0 and audio_out is None:
                 raise RuntimeError("No audio produced.")
+
+            if len(segments) > 0 and pause_after_speaker > 0:
+                import numpy as np
+                silence_samples = int(pause_after_speaker * sample_rate)
+                silence = np.zeros(silence_samples, dtype=np.float32)
+                audio_segments = [s[1] for s in segments]
+                audio_out = audio_segments[0]
+                for seg in audio_segments[1:]:
+                    audio_out = np.concatenate([audio_out, silence, seg], axis=0)
+            elif audio_out is None:
+                audio_out = np.concatenate([s[1] for s in segments], axis=0)
 
             output = numpy_audio_to_comfy(audio_out, sample_rate)
             step += 1

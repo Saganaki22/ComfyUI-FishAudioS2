@@ -78,14 +78,14 @@ class ReferenceLoader:
         references: list[ServeReferenceAudio],
         use_cache: Literal["on", "off"],
     ) -> Tuple:
-        # Load the references audio and text by hash
-        audio_hashes = [sha256(ref.audio).hexdigest() for ref in references]
-
         cache_used = False
         prompt_tokens, prompt_texts = [], []
         for i, ref in enumerate(references):
-            if use_cache == "off" or audio_hashes[i] not in self.ref_by_hash:
-                # If the references are not already loaded, encode them
+            if not ref.audio:
+                prompt_tokens.append(None)
+                prompt_texts.append("")
+                logger.info(f"Speaker {i}: No reference audio provided")
+            elif use_cache == "off" or sha256(ref.audio).hexdigest() not in self.ref_by_hash:
                 prompt_tokens.append(
                     self.encode_reference(
                         reference_audio=ref.audio,
@@ -93,11 +93,10 @@ class ReferenceLoader:
                     )
                 )
                 prompt_texts.append(ref.text)
-                self.ref_by_hash[audio_hashes[i]] = (prompt_tokens[-1], ref.text)
+                self.ref_by_hash[sha256(ref.audio).hexdigest()] = (prompt_tokens[-1], ref.text)
 
             else:
-                # Reuse already encoded references
-                cached_token, cached_text = self.ref_by_hash[audio_hashes[i]]
+                cached_token, cached_text = self.ref_by_hash[sha256(ref.audio).hexdigest()]
                 prompt_tokens.append(cached_token)
                 prompt_texts.append(cached_text)
                 cache_used = True
