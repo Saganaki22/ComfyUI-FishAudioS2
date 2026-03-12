@@ -41,9 +41,11 @@ Thumbs.db
 nul
 *.log
 
-# Model files (downloaded separately)
-models/
-checkpoints/
+# Model weights (downloaded separately — top-level only)
+/models/
+/checkpoints/
+# Make sure the fish_speech source models package is NOT ignored
+!fish_speech_src/fish_speech/models/
 
 # Test outputs
 output/
