@@ -1,7 +1,7 @@
 [project]
 name = "ComfyUI-fish-audio-s2"
 description = "ComfyUI custom nodes for Fish Audio S2-Pro TTS — voice clone, multi-speaker, and text-to-speech"
-version = "0.2.2"
+version = "0.2.3"
 license = {file = "LICENSE"}
 dependencies = [
     "soundfile",

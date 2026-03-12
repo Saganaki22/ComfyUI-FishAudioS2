@@ -9,6 +9,7 @@
     <a href="https://fish.audio/"><img src="https://img.shields.io/badge/Playground-Fish_Audio-1f7a8c?style=flat-square&logo=readme&logoColor=white" alt="Fish Audio Playground"></a>
     <a href="https://huggingface.co/fishaudio/s2-pro"><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Model-blue' alt="HF Model"></a>
     <a href="https://huggingface.co/baicai1145/s2-pro-w4a16"><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Quantized-4bit-purple' alt="Quantized Model"></a>
+    <a href="https://huggingface.co/drbaph/s2-pro-fp8"><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Quantized-FP8-orange' alt="FP8 Model"></a>
     <a href="https://github.com/fishaudio/fish-speech"><img src="https://img.shields.io/badge/GitHub-Original-green" alt="GitHub"></a>
     <a href="https://huggingface.co/papers/2603.08823"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20HF-Paper-yellow" alt="HF Paper"></a>
     <a href="https://arxiv.org/abs/2603.08823"><img src="https://img.shields.io/badge/arXiv-2603.08823-b31b1b" alt="arXiv"></a>
@@ -59,6 +60,7 @@ This ComfyUI wrapper provides native node-based integration with:
 
 - **GPU:** NVIDIA GPU with **24GB+ VRAM** for full model (RTX 3090/4090, A5000, etc.)
   - **12GB+ VRAM** works with the **GPTQ W4A16 quantized model** (`s2-pro-w4a16`)
+  - **12GB+ VRAM** works with the **FP8 quantized model** (`s2-pro-fp8`, requires RTX 4090/5090 or any Ada/Blackwell GPU with FP8 support)
 - **CPU/MPS:** ⚠️ EXPERIMENTAL
 - **Python:** 3.10+
 - **CUDA:** 11.8+ (for GPU inference)
@@ -93,12 +95,12 @@ This ComfyUI wrapper provides native node-based integration with:
 |-------|------|-------------|
 | **s2-pro** | ~24GB | Full precision (4B params) — best quality, works out of the box |
 | **s2-pro-w4a16** | ~8GB | GPTQ 4-bit mixed precision — **recommended for 12GB GPUs**, requires AutoGPTQ |
-
-The quantized model uses **GPTQ W4A16** (4-bit weights, 16-bit activations) for the Slow AR backbone while keeping the Fast AR decoder and codec in higher precision for quality.
+| **s2-pro-fp8** | ~12GB | FP8 weight-only quantized — **recommended for Ada/Blackwell GPUs** (RTX 4090/5090), no extra dependencies |
 
 Models are auto-downloaded from HuggingFace on first use:
 - [fishaudio/s2-pro](https://huggingface.co/fishaudio/s2-pro) — full model
-- [baicai1145/s2-pro-w4a16](https://huggingface.co/baicai1145/s2-pro-w4a16) — GPTQ quantized
+- [baicai1145/s2-pro-w4a16](https://huggingface.co/baicai1145/s2-pro-w4a16) — GPTQ 4-bit quantized
+- [drbaph/s2-pro-fp8](https://huggingface.co/drbaph/s2-pro-fp8) — FP8 quantized
 
 ---
 
@@ -318,9 +320,14 @@ pip install -U huggingface_hub
 huggingface-cli download fishaudio/s2-pro --local-dir ComfyUI/models/fishaudioS2/s2-pro
 ```
 
-For the quantized model, download from [baicai1145/s2-pro-w4a16](https://huggingface.co/baicai1145/s2-pro-w4a16):
+For the GPTQ quantized model, download from [baicai1145/s2-pro-w4a16](https://huggingface.co/baicai1145/s2-pro-w4a16):
 ```bash
 huggingface-cli download baicai1145/s2-pro-w4a16 --local-dir ComfyUI/models/fishaudioS2/s2-pro-w4a16
+```
+
+For the FP8 quantized model, download from [drbaph/s2-pro-fp8](https://huggingface.co/drbaph/s2-pro-fp8):
+```bash
+huggingface-cli download drbaph/s2-pro-fp8 --local-dir ComfyUI/models/fishaudioS2/s2-pro-fp8
 ```
 
 ### GPTQ Quantized Model (s2-pro-w4a16)
@@ -433,6 +440,7 @@ pip install auto-gptq --extra-index-url https://huggingface.github.io/autogptq-i
 ### 🤗 HuggingFace
 - **Model (Full):** [fishaudio/s2-pro](https://huggingface.co/fishaudio/s2-pro)
 - **Model (4-bit Quantized):** [baicai1145/s2-pro-w4a16](https://huggingface.co/baicai1145/s2-pro-w4a16)
+- **Model (FP8 Quantized):** [drbaph/s2-pro-fp8](https://huggingface.co/drbaph/s2-pro-fp8)
 - **Paper:** [huggingface.co/papers/2603.08823](https://huggingface.co/papers/2603.08823)
 
 ### 📄 Paper & Code

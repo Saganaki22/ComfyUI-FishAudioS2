@@ -75,6 +75,10 @@ HF_MODELS = {
         "repo_id": "baicai1145/s2-pro-w4a16",
         "description": "4-bit quantized (~8GB VRAM, recommended for 12GB GPUs)",
     },
+    "s2-pro-fp8": {
+        "repo_id": "drbaph/s2-pro-fp8",
+        "description": "FP8 weight-only quantized (~12GB VRAM, requires RTX 4090/5090)",
+    },
 }
 HF_DEFAULT_MODEL_NAME = "s2-pro"
 
@@ -247,15 +251,17 @@ def resolve_precision(precision_choice: str, model_name: str, device: str) -> to
     - Otherwise use the specified precision
     """
     if precision_choice == "auto":
-        # Detect if this is a quantized model
+        is_fp8      = "fp8" in model_name.lower()
         is_quantized = any(x in model_name.lower() for x in ["w4a16", "gptq", "int4", "4bit"])
-        
+
         if device == "cuda":
-            # Quantized models work best with float16
+            if is_fp8:
+                # FP8 weights are self-scaling; activations run in bfloat16
+                logger.info("Auto-detected FP8 model — using bfloat16 for activations")
+                return torch.bfloat16
             if is_quantized:
                 logger.info("Auto-detected quantized model — using float16")
                 return torch.float16
-            # Full model works best with bfloat16 on RTX 30xx+
             logger.info("Auto-detected full model — using bfloat16")
             return torch.bfloat16
         elif device == "mps":

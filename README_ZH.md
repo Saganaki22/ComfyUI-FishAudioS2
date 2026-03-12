@@ -9,6 +9,7 @@
     <a href="https://fish.audio/"><img src="https://img.shields.io/badge/Playground-Fish_Audio-1f7a8c?style=flat-square&logo=readme&logoColor=white" alt="Fish Audio Playground"></a>
     <a href="https://huggingface.co/fishaudio/s2-pro"><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Model-blue' alt="HF Model"></a>
     <a href="https://huggingface.co/baicai1145/s2-pro-w4a16"><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Quantized-4bit-purple' alt="Quantized Model"></a>
+    <a href="https://huggingface.co/drbaph/s2-pro-fp8"><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Quantized-FP8-orange' alt="FP8 Model"></a>
     <a href="https://github.com/fishaudio/fish-speech"><img src="https://img.shields.io/badge/GitHub-Original-green" alt="GitHub"></a>
     <a href="https://huggingface.co/papers/2603.08823"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20HF-Paper-yellow" alt="HF Paper"></a>
     <a href="https://arxiv.org/abs/2603.08823"><img src="https://img.shields.io/badge/arXiv-2603.08823-b31b1b" alt="arXiv"></a>
@@ -50,6 +51,7 @@
 
 - **GPU：** NVIDIA 显卡，完整模型需 **24GB+ 显存**（RTX 3090/4090、A5000 等）
   - **12GB+ 显存** 可使用 **GPTQ W4A16 量化模型**（`s2-pro-w4a16`）
+  - **12GB+ 显存** 可使用 **FP8 量化模型**（`s2-pro-fp8`，需要 RTX 4090/5090 或任何支持 FP8 的 Ada/Blackwell 显卡）
 - **CPU/MPS：** 支持但速度明显较慢
 - **Python：** 3.10+
 - **CUDA：** 11.8+（GPU 推理）
@@ -84,12 +86,12 @@
 |------|------|------|
 | **s2-pro** | ~24GB | 完整精度（40亿参数）— 最佳质量，开箱即用 |
 | **s2-pro-w4a16** | ~8GB | GPTQ 4位混合精度 — **12GB 显卡推荐**，需要 AutoGPTQ |
-
-量化模型对 Slow AR 主干使用 **GPTQ W4A16**（4位权重，16位激活），同时保持 Fast AR 解码器和编解码器为更高精度以确保质量。
+| **s2-pro-fp8** | ~12GB | FP8 逐行缩放量化 — **推荐用于 Ada/Blackwell 显卡**（RTX 4090/5090），无需额外依赖 |
 
 首次使用时自动从 HuggingFace 下载模型：
 - [fishaudio/s2-pro](https://huggingface.co/fishaudio/s2-pro) — 完整模型
-- [baicai1145/s2-pro-w4a16](https://huggingface.co/baicai1145/s2-pro-w4a16) — GPTQ 量化
+- [baicai1145/s2-pro-w4a16](https://huggingface.co/baicai1145/s2-pro-w4a16) — GPTQ 4位量化
+- [drbaph/s2-pro-fp8](https://huggingface.co/drbaph/s2-pro-fp8) — FP8 量化
 
 ---
 
@@ -311,9 +313,14 @@ pip install -U huggingface_hub
 huggingface-cli download fishaudio/s2-pro --local-dir ComfyUI/models/fishaudioS2/s2-pro
 ```
 
-量化模型从 [baicai1145/s2-pro-w4a16](https://huggingface.co/baicai1145/s2-pro-w4a16) 下载：
+GPTQ 量化模型从 [baicai1145/s2-pro-w4a16](https://huggingface.co/baicai1145/s2-pro-w4a16) 下载：
 ```bash
 huggingface-cli download baicai1145/s2-pro-w4a16 --local-dir ComfyUI/models/fishaudioS2/s2-pro-w4a16
+```
+
+FP8 量化模型从 [drbaph/s2-pro-fp8](https://huggingface.co/drbaph/s2-pro-fp8) 下载：
+```bash
+huggingface-cli download drbaph/s2-pro-fp8 --local-dir ComfyUI/models/fishaudioS2/s2-pro-fp8
 ```
 
 ### GPTQ 量化模型（s2-pro-w4a16）
@@ -426,6 +433,7 @@ pip install auto-gptq --extra-index-url https://huggingface.github.io/autogptq-i
 ### 🤗 HuggingFace
 - **模型（完整）：** [fishaudio/s2-pro](https://huggingface.co/fishaudio/s2-pro)
 - **模型（4位量化）：** [baicai1145/s2-pro-w4a16](https://huggingface.co/baicai1145/s2-pro-w4a16)
+- **模型（FP8 量化）：** [drbaph/s2-pro-fp8](https://huggingface.co/drbaph/s2-pro-fp8)
 - **论文：** [huggingface.co/papers/2603.08823](https://huggingface.co/papers/2603.08823)
 
 ### 📄 论文与代码

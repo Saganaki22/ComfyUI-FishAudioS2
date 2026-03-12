@@ -271,7 +271,7 @@ if _V3:
             if not text.strip():
                 raise ValueError("Text cannot be empty.")
 
-            engine = _get_engine(model_path, device, precision, attention, compile_model)
+            engine = _get_engine(model_path, device, precision, attention, compile_model, keep_model_loaded)
 
             from fish_speech.utils.schema import ServeReferenceAudio, ServeTTSRequest
 
@@ -456,7 +456,7 @@ else:
             if not text.strip():
                 raise ValueError("Text cannot be empty.")
 
-            engine = _get_engine(model_path, device, precision, attention, compile_model)
+            engine = _get_engine(model_path, device, precision, attention, compile_model, keep_model_loaded)
 
             from fish_speech.utils.schema import ServeReferenceAudio, ServeTTSRequest
 
@@ -549,7 +549,7 @@ else:
 # Shared helpers (used by both the v3 class method and v2 instance method)
 # ---------------------------------------------------------------------------
 
-def _get_engine(model_path, device, precision, attention, compile_model):
+def _get_engine(model_path, device, precision, attention, compile_model, keep_loaded=False):
     key = get_cache_key(model_path, device, precision, attention)
     cached_engine, cached_key = get_cached_engine()
     if cached_engine is not None and cached_key == key:
@@ -558,7 +558,7 @@ def _get_engine(model_path, device, precision, attention, compile_model):
     if cached_engine is not None:
         unload_engine()
     engine = load_engine(model_path, device, precision, attention, compile_model)
-    set_cached_engine(engine, key)
+    set_cached_engine(engine, key, keep_loaded=keep_loaded)
     return engine
 
 
