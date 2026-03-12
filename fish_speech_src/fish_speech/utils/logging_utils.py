@@ -1,4 +1,9 @@
-from lightning.pytorch.utilities import rank_zero_only
+try:
+    from lightning.pytorch.utilities import rank_zero_only
+except ImportError:
+    # lightning is a training-only dependency — not required for inference.
+    def rank_zero_only(fn):
+        return fn
 
 from fish_speech.utils import logger as log
 

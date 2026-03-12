@@ -2,8 +2,16 @@ from typing import List
 
 import hydra
 from omegaconf import DictConfig
-from pytorch_lightning import Callback
-from pytorch_lightning.loggers import Logger
+try:
+    from pytorch_lightning import Callback
+    from pytorch_lightning.loggers import Logger
+except ImportError:
+    try:
+        from lightning.pytorch import Callback
+        from lightning.pytorch.loggers import Logger
+    except ImportError:
+        Callback = object
+        Logger = object
 
 from .logger import RankedLogger
 

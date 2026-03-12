@@ -5,7 +5,11 @@ import rich
 import rich.syntax
 import rich.tree
 from hydra.core.hydra_config import HydraConfig
-from lightning.pytorch.utilities import rank_zero_only
+try:
+    from lightning.pytorch.utilities import rank_zero_only
+except ImportError:
+    def rank_zero_only(fn):
+        return fn
 from omegaconf import DictConfig, OmegaConf, open_dict
 from rich.prompt import Prompt
 
