@@ -376,10 +376,17 @@ def generate(
     return seq
 
 
-def init_model(checkpoint_path, device, precision, compile=False):
-    model = DualARTransformer.from_pretrained(checkpoint_path, load_weights=True)
+def init_model(checkpoint_path, device, precision, compile=False, bnb_mode=None):
+    model = DualARTransformer.from_pretrained(
+        checkpoint_path, load_weights=True, bnb_mode=bnb_mode
+    )
 
-    model = model.to(device=device, dtype=precision)
+    if bnb_mode is not None:
+        # BNB manages its own internal dtypes; only move to device, not dtype.
+        # Casting a BNB-quantized model with .to(dtype=...) corrupts the weights.
+        model = model.to(device=device)
+    else:
+        model = model.to(device=device, dtype=precision)
     logger.info(f"Restored model from checkpoint")
 
     if isinstance(model, DualARTransformer):
@@ -767,13 +774,14 @@ def launch_thread_safe_queue(
     device,
     precision,
     compile: bool = False,
+    bnb_mode=None,
 ):
     input_queue = queue.Queue()
     init_event = threading.Event()
 
     def worker():
         model, decode_one_token = init_model(
-            checkpoint_path, device, precision, compile=compile
+            checkpoint_path, device, precision, compile=compile, bnb_mode=bnb_mode
         )
         with torch.device(device):
             model.setup_caches(

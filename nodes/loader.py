@@ -79,6 +79,16 @@ HF_MODELS = {
         "repo_id": "drbaph/s2-pro-fp8",
         "description": "FP8 weight-only quantized (~12GB VRAM, requires RTX 4090/5090)",
     },
+    "s2-pro-bnb-int8": {
+        "repo_id": "fishaudio/s2-pro",
+        "description": "BNB INT8 on-the-fly (~8-9GB VRAM, requires bitsandbytes)",
+        "base_model": "s2-pro",
+    },
+    "s2-pro-bnb-nf4": {
+        "repo_id": "fishaudio/s2-pro",
+        "description": "BNB NF4 4-bit on-the-fly (~4-5GB VRAM, requires bitsandbytes)",
+        "base_model": "s2-pro",
+    },
 }
 HF_DEFAULT_MODEL_NAME = "s2-pro"
 
@@ -87,14 +97,17 @@ def _auto_download_model(model_name: str = HF_DEFAULT_MODEL_NAME) -> bool:
     """
     Download a model from HuggingFace into models/fishaudioS2/<model_name>/
     using huggingface_hub.
+    For BNB models, download to the base model folder (they share weights).
     Returns True if the model is present after the call.
     """
     if model_name not in HF_MODELS:
         logger.error(f"Unknown model: {model_name}")
         return False
 
+    # BNB models share weights with the base model
+    folder_name = HF_MODELS[model_name].get("base_model", model_name)
     repo_id = HF_MODELS[model_name]["repo_id"]
-    dest = _get_models_base() / model_name
+    dest = _get_models_base() / folder_name
 
     if dest.is_dir() and any(dest.iterdir()):
         return True
@@ -130,9 +143,13 @@ def _auto_download_model(model_name: str = HF_DEFAULT_MODEL_NAME) -> bool:
 
 
 def _is_model_downloaded(model_name: str) -> bool:
-    """Check if a model folder exists and has content."""
+    """Check if a model folder exists and has content.
+    For BNB models, check the base model instead (they share the same weights).
+    """
+    # BNB models use the base model's weights
+    base_name = HF_MODELS.get(model_name, {}).get("base_model", model_name)
     base = _get_models_base()
-    model_path = base / model_name
+    model_path = base / base_name
     
     if not model_path.is_dir():
         return False
@@ -277,6 +294,19 @@ def resolve_precision(precision_choice: str, model_name: str, device: str) -> to
     return torch.float32
 
 
+def resolve_bnb_mode(model_name: str) -> str | None:
+    """
+    Return 'int8', 'nf4', or None based on model_name.
+    BNB models are: s2-pro-bnb-int8, s2-pro-bnb-nf4
+    """
+    name_lower = model_name.lower()
+    if "bnb-int8" in name_lower or "bnb_int8" in name_lower:
+        return "int8"
+    if "bnb-nf4" in name_lower or "bnb_nf4" in name_lower:
+        return "nf4"
+    return None
+
+
 def load_engine(
     model_name: str,
     device: str,
@@ -299,6 +329,29 @@ def load_engine(
     'sage_attention'  — monkey-patch every Attention layer with sageattn.
     """
     device_str, _ = resolve_device(device)
+    bnb_mode = resolve_bnb_mode(model_name)
+
+    # BNB guardrails: requires CUDA, force sdpa attention
+    if bnb_mode is not None:
+        if not torch.cuda.is_available():
+            raise RuntimeError(
+                f"BitsAndBytes quantization ({model_name}) requires CUDA. "
+                "Set device to 'cuda' or use a non-BNB model variant."
+            )
+        if device_str != "cuda":
+            raise RuntimeError(
+                f"BitsAndBytes quantization ({model_name}) requires CUDA, "
+                f"but device resolved to '{device_str}'. "
+                "Set device to 'cuda' or 'auto' with a CUDA GPU available."
+            )
+        # Force sdpa for BNB - flash/sage can conflict with BNB's custom CUDA kernels
+        if attention in ("flash_attention", "sage_attention"):
+            logger.warning(
+                f"BNB quantization forces attention to 'sdpa' for stability. "
+                f"Ignoring user choice: {attention}"
+            )
+            attention = "sdpa"
+        logger.info(f"BNB mode activated: {bnb_mode}")
 
     # Guard unsupported attention modes on non-CUDA devices
     if device_str != "cuda":
@@ -328,7 +381,15 @@ def load_engine(
             "The node will auto-install the missing package on startup."
         ) from e
 
-    model_path = resolve_model_path(model_name)
+    # For BNB models, resolve path to the base s2-pro checkpoint
+    # (BNB quantization is applied on-the-fly, not stored separately)
+    if bnb_mode is not None:
+        base_model_name = HF_MODELS.get(model_name, {}).get("base_model", "s2-pro")
+        model_path = resolve_model_path(base_model_name)
+        logger.info(f"BNB model '{model_name}' -> loading base weights from '{base_model_name}'")
+    else:
+        model_path = resolve_model_path(model_name)
+
     dtype = resolve_precision(precision, model_name, device_str)
 
     logger.info(f"Loading Fish S2 LLaMA from: {model_path}")
@@ -344,6 +405,7 @@ def load_engine(
             device=device_str,
             precision=dtype,
             compile=compile_model,
+            bnb_mode=bnb_mode,
         )
     finally:
         _restore_attention_class(_orig_forward, _attn_cls)

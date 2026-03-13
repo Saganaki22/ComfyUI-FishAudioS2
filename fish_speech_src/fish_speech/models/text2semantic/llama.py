@@ -95,6 +95,139 @@ def _replace_linear_with_fp8(module: nn.Module) -> None:
             _replace_linear_with_fp8(child)
 
 
+# ---------------------------------------------------------------------------
+# BitsAndBytes on-the-fly quantization helpers
+# ---------------------------------------------------------------------------
+# BNB wraps nn.Linear layers with Linear8bitLt (INT8) or Linear4bit (NF4).
+# This is completely orthogonal to attention patching:
+#   - Attention patches replace Attention.forward() — the computation between
+#     wqkv and wo projections.
+#   - BNB replaces the wqkv/wo layer *objects* themselves.
+# The patched forward still calls self.wqkv(x) — it does not care whether
+# that is nn.Linear, FP8Linear, Linear8bitLt or Linear4bit.
+#
+# BNB REQUIRES CUDA. The guardrails in loader.py ensure we never reach these
+# functions on CPU/MPS, but we double-check here for safety.
+# ---------------------------------------------------------------------------
+
+def _apply_bnb_int8(model: nn.Module) -> nn.Module:
+    """
+    Replace all nn.Linear layers with bitsandbytes Linear8bitLt (INT8).
+
+    Uses LLM.int8() style: weights stored as int8 with per-column fp16
+    scales, outlier activations handled via threshold=6.0.
+    Expected VRAM for 4B s2-pro: ~8-9 GB (vs ~16 GB bfloat16).
+
+    Returns the model with layers replaced in-place.
+    Raises ImportError if bitsandbytes is not installed.
+    Raises RuntimeError if CUDA is not available.
+    """
+    if not torch.cuda.is_available():
+        raise RuntimeError(
+            "BitsAndBytes INT8 quantization requires CUDA. "
+            "Switch device to 'cuda' or use a different model."
+        )
+    try:
+        import bitsandbytes as bnb
+    except ImportError:
+        raise ImportError(
+            "bitsandbytes is not installed.\n"
+            "Install it with:  pip install bitsandbytes\n"
+            "Then restart ComfyUI."
+        )
+
+    replaced = 0
+    for name, child in list(model.named_modules()):
+        if not isinstance(child, nn.Linear):
+            continue
+        parts = name.split(".")
+        parent = model
+        for part in parts[:-1]:
+            parent = getattr(parent, part)
+        child_name = parts[-1]
+
+        # Linear8bitLt quantizes on .cuda() - pass weight via constructor
+        bnb_layer = bnb.nn.Linear8bitLt(
+            child.in_features,
+            child.out_features,
+            bias=child.bias is not None,
+            has_fp16_weights=False,
+            threshold=6.0,
+        )
+        # Quantize weight immediately by wrapping in Int8Params and moving to CUDA
+        bnb_layer.weight = bnb.nn.Int8Params(
+            child.weight.data.contiguous(),
+            requires_grad=False,
+            has_fp16_weights=False,
+        ).cuda()
+        if child.bias is not None:
+            bnb_layer.bias = nn.Parameter(child.bias.data.clone(), requires_grad=False)
+        setattr(parent, child_name, bnb_layer)
+        replaced += 1
+
+    logger.info(f"BNB INT8: replaced {replaced} nn.Linear layers with Linear8bitLt")
+    return model
+
+
+def _apply_bnb_nf4(model: nn.Module) -> nn.Module:
+    """
+    Replace all nn.Linear layers with bitsandbytes Linear4bit (NF4 4-bit).
+
+    Uses double-quantization and bfloat16 compute dtype for best quality.
+    Expected VRAM for 4B s2-pro: ~4-5 GB.
+
+    Returns the model with layers replaced in-place.
+    Raises ImportError if bitsandbytes is not installed.
+    Raises RuntimeError if CUDA is not available.
+    """
+    if not torch.cuda.is_available():
+        raise RuntimeError(
+            "BitsAndBytes NF4 quantization requires CUDA. "
+            "Switch device to 'cuda' or use a different model."
+        )
+    try:
+        import bitsandbytes as bnb
+    except ImportError:
+        raise ImportError(
+            "bitsandbytes is not installed.\n"
+            "Install it with:  pip install bitsandbytes\n"
+            "Then restart ComfyUI."
+        )
+
+    replaced = 0
+    for name, child in list(model.named_modules()):
+        if not isinstance(child, nn.Linear):
+            continue
+        parts = name.split(".")
+        parent = model
+        for part in parts[:-1]:
+            parent = getattr(parent, part)
+        child_name = parts[-1]
+
+        bnb_layer = bnb.nn.Linear4bit(
+            child.in_features,
+            child.out_features,
+            bias=child.bias is not None,
+            quant_type="nf4",
+            compute_dtype=torch.bfloat16,
+            compress_statistics=True,
+        )
+        # Quantize weight immediately by wrapping in Params4bit and moving to CUDA
+        bnb_layer.weight = bnb.nn.Params4bit(
+            child.weight.data.contiguous(),
+            requires_grad=False,
+            quant_type="nf4",
+            compress_statistics=True,
+        ).cuda()
+        if child.bias is not None:
+            bnb_layer.bias = nn.Parameter(child.bias.data.clone(), requires_grad=False)
+        setattr(parent, child_name, bnb_layer)
+        replaced += 1
+
+    logger.info(f"BNB NF4: replaced {replaced} nn.Linear layers with Linear4bit")
+    return model
+
+
 def find_multiple(n: int, k: int) -> int:
     if n % k == 0:
         return n
@@ -560,7 +693,16 @@ class BaseTransformer(nn.Module):
         max_length: int | None = None,
         lora_config: LoraConfig | None = None,
         rope_base: int | None = None,
+        bnb_mode: str | None = None,
     ) -> "BaseTransformer":
+        """
+        bnb_mode: None (no BNB), 'int8' (Linear8bitLt), or 'nf4' (Linear4bit).
+        When set, the model is loaded in full bf16 first, then all nn.Linear
+        layers are replaced with the corresponding BNB quantized layer.
+        BNB quantization is applied AFTER weights are loaded and BEFORE the
+        model is moved to CUDA, so quantization happens on CPU weight data.
+        Actual CUDA-side quantization occurs on the first forward pass.
+        """
         # Import wrapper locally to avoid circular dependency or global import issues
         from fish_speech.tokenizer import FishTokenizer
 
@@ -718,6 +860,15 @@ class BaseTransformer(nn.Module):
                 )
             else:
                 model.load_state_dict(weights, strict=False, assign=True)
+
+        # BNB on-the-fly quantization — applied after weights are loaded on CPU,
+        # before model.to(device). Actual CUDA quantization happens on first forward.
+        if bnb_mode == "int8":
+            logger.info("Applying BitsAndBytes INT8 quantization on-the-fly...")
+            model = _apply_bnb_int8(model)
+        elif bnb_mode == "nf4":
+            logger.info("Applying BitsAndBytes NF4 4-bit quantization on-the-fly...")
+            model = _apply_bnb_nf4(model)
 
         if lora_config is not None:
             setup_lora(model, lora_config)

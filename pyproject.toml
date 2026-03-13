@@ -1,7 +1,7 @@
 [project]
 name = "ComfyUI-fish-audio-s2"
 description = "ComfyUI custom nodes for Fish Audio S2-Pro TTS — voice clone, multi-speaker, and text-to-speech"
-version = "0.2.7"
+version = "0.2.8"
 license = {file = "LICENSE"}
 dependencies = [
     "numpy",
@@ -10,7 +10,7 @@ dependencies = [
     "loguru",
     "transformers",
     "einops",
-    "einx[torch]==0.2.2",
+    "einx[torch]",
     "librosa",
     "rich",
     "ormsgpack",
@@ -22,9 +22,12 @@ dependencies = [
     "protobuf",
     "safetensors",
     "pyrootutils",
-    "natsort>=8.4.0",
-    "loralib>=0.1.2",
-    "hydra-core>=1.3.2",
+    "natsort",
+    "loralib",
+    "hydra-core",
+    "descript-audio-codec",
+    "descript-audiotools",
+    "bitsandbytes",
 ]
 
 [project.urls]

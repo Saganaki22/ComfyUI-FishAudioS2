@@ -233,6 +233,7 @@ if _V3:
                             "'sdpa' forces PyTorch SDPA. "
                             "'flash_attention' forces FlashAttention. "
                             "'sage_attention' requires sageattention package. "
+                            "BNB models (s2-pro-bnb-int8/nf4) always use sdpa regardless of this setting. "
                             "Changing this reloads the model."
                         ),
                     ),
@@ -511,7 +512,10 @@ else:
                     "language": (LANGUAGES, {"default": "auto"}),
                     "device": (["auto", "cuda", "cpu", "mps"], {"default": "auto"}),
                     "precision": (["auto", "bfloat16", "float16", "float32"], {"default": "auto"}),
-                    "attention": (["auto", "sdpa", "sage_attention", "flash_attention"], {"default": "auto"}),
+                    "attention": (["auto", "sdpa", "sage_attention", "flash_attention"], {
+                        "default": "auto",
+                        "tooltip": "BNB models (s2-pro-bnb-int8/nf4) always use sdpa regardless of this setting.",
+                    }),
                     **COMMON_GENERATION_INPUTS,
                     "pause_after_speaker": ("FLOAT", {
                         "default": 0.4, "min": 0.0, "max": 5.0, "step": 0.1,
@@ -676,7 +680,7 @@ else:
 
 def _get_engine(model_path, device, precision, attention, compile_model, keep_loaded=False, offload_to_cpu=False):
     from .loader import resolve_device
-    key = get_cache_key(model_path, device, precision, attention)
+    key = get_cache_key(model_path, device, precision, attention, model_path)
     cached_engine, cached_key = get_cached_engine()
     if cached_engine is not None and cached_key == key:
         if is_offloaded():

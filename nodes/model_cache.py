@@ -26,8 +26,10 @@ _offloaded: bool = False
 cancel_event: threading.Event = threading.Event()
 
 
-def get_cache_key(model_path: str, device: str, precision: str, attention: str) -> tuple:
-    return (model_path, device, precision, attention)
+def get_cache_key(model_path: str, device: str, precision: str, attention: str, model_name: str = "") -> tuple:
+    # Include model_name in key so s2-pro and s2-pro-bnb-nf4 are cached separately
+    # (they share the same path but have different quantization)
+    return (model_path, device, precision, attention, model_name)
 
 
 def get_cached_engine():

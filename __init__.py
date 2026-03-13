@@ -9,7 +9,7 @@ Required pip packages are auto-installed on startup.
 Model weights are auto-downloaded from HuggingFace on first inference.
 """
 
-__version__ = "0.2.7"
+__version__ = "0.2.8"
 
 import logging
 import subprocess
@@ -101,6 +101,8 @@ def _pip_install(spec: str) -> bool:
 # fish_speech is bundled in fish_speech_src/ — NOT installed via pip.
 # Only its runtime deps are installed here. torch is intentionally excluded.
 _REQUIRED = [
+    ("numpy",           "numpy"),
+    ("tqdm",            "tqdm"),
     ("soundfile",       "soundfile"),
     ("loguru",          "loguru"),
     ("transformers",    "transformers>=4.45.2"),
@@ -113,13 +115,16 @@ _REQUIRED = [
     ("cachetools",      "cachetools"),
     ("zstandard",       "zstandard>=0.22.0"),
     ("resampy",         "resampy>=0.4.3"),
-    ("google.protobuf", "protobuf>=4.21.0"),
     ("safetensors",     "safetensors>=0.4.0"),
     ("pyrootutils",     "pyrootutils>=1.0.4"),
     ("natsort",         "natsort>=8.4.0"),
     ("loralib",         "loralib>=0.1.2"),
     ("hydra",           "hydra-core>=1.3.2"),
     ("einx",            "einx[torch]==0.2.2"),
+    ("dac",             "descript-audio-codec"),
+    ("audiotools",      "descript-audiotools>=0.7.2 --no-deps"),
+    ("google.protobuf", "protobuf==5.29.5"),
+    ("bitsandbytes",    "bitsandbytes"),
 ]
 
 
