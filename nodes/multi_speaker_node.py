@@ -309,6 +309,8 @@ if _V3:
                 ],
                 outputs=[
                     IO.Audio.Output(display_name="audio"),
+                    IO.Audio.Output(display_name="character_1_audio"),
+                    IO.Audio.Output(display_name="character_2_audio"),
                 ],
             )
 
@@ -391,7 +393,9 @@ if _V3:
 
             tokens = max_new_tokens if max_new_tokens > 0 else 0
             sample_rate = 44100
-            audio_turns = []   # one numpy array per dialogue line
+            audio_turns = []       # one numpy array per dialogue line (original mixed audio)
+            audio_char1_turns = [] # speaker_1 only
+            audio_char2_turns = [] # speaker_2 only
 
             total_steps = len(dialogue_lines)
             pbar = ProgressBar(total_steps) if _PBAR else None
@@ -442,6 +446,18 @@ if _V3:
 
                     audio_turns.append(line_audio)
 
+                    # For character 1: actual audio if speaker_idx == 0, else silence
+                    if speaker_idx == 0:
+                        audio_char1_turns.append(line_audio)
+                    else:
+                        audio_char1_turns.append(np.zeros_like(line_audio))
+
+                    # For character 2: actual audio if speaker_idx == 1, else silence
+                    if speaker_idx == 1:
+                        audio_char2_turns.append(line_audio)
+                    else:
+                        audio_char2_turns.append(np.zeros_like(line_audio))
+
                     if pbar:
                         pbar.update_absolute(line_idx + 1, total_steps)
 
@@ -449,13 +465,26 @@ if _V3:
                 if pause_after_speaker > 0:
                     silence_samples = int(pause_after_speaker * sample_rate)
                     silence = np.zeros(silence_samples, dtype=np.float32)
+                    # Original mixed audio
                     audio_out = audio_turns[0]
                     for turn in audio_turns[1:]:
                         audio_out = np.concatenate([audio_out, silence, turn], axis=0)
+                    # Character 1 audio
+                    audio_char1_out = audio_char1_turns[0]
+                    for turn in audio_char1_turns[1:]:
+                        audio_char1_out = np.concatenate([audio_char1_out, silence, turn], axis=0)
+                    # Character 2 audio
+                    audio_char2_out = audio_char2_turns[0]
+                    for turn in audio_char2_turns[1:]:
+                        audio_char2_out = np.concatenate([audio_char2_out, silence, turn], axis=0)
                 else:
                     audio_out = np.concatenate(audio_turns, axis=0)
+                    audio_char1_out = np.concatenate(audio_char1_turns, axis=0)
+                    audio_char2_out = np.concatenate(audio_char2_turns, axis=0)
 
-                output = numpy_audio_to_comfy(audio_out, sample_rate)
+                output1 = numpy_audio_to_comfy(audio_out, sample_rate)
+                output2 = numpy_audio_to_comfy(audio_char1_out, sample_rate)
+                output3 = numpy_audio_to_comfy(audio_char2_out, sample_rate)
 
             finally:
                 # Always run on completion, cancellation, or error.
@@ -464,7 +493,7 @@ if _V3:
                 elif offload_to_cpu:
                     offload_engine_to_cpu()
 
-            return IO.NodeOutput(output)
+            return IO.NodeOutput(output1, output2, output3)
 
 # ---------------------------------------------------------------------------
 # V2 fallback (old INPUT_TYPES API) — used if ComfyUI < 0.8.1
@@ -544,8 +573,8 @@ else:
                 "optional": optional_inputs,
             }
 
-        RETURN_TYPES = ("AUDIO",)
-        RETURN_NAMES = ("audio",)
+        RETURN_TYPES = ("AUDIO", "AUDIO", "AUDIO")
+        RETURN_NAMES = ("audio", "character_1_audio", "character_2_audio")
         FUNCTION = "generate"
         CATEGORY = "FishAudioS2"
         DESCRIPTION = "Fish Audio S2-Pro Multi-Speaker TTS (legacy mode — upgrade ComfyUI for dynamic inputs)."
@@ -607,7 +636,9 @@ else:
 
             tokens = max_new_tokens if max_new_tokens > 0 else 0
             sample_rate = 44100
-            audio_turns = []
+            audio_turns = []       # one numpy array per dialogue line (original mixed audio)
+            audio_char1_turns = [] # speaker_1 only
+            audio_char2_turns = [] # speaker_2 only
 
             total_steps = len(dialogue_lines)
             pbar = ProgressBar(total_steps) if _PBAR else None
@@ -658,6 +689,18 @@ else:
 
                     audio_turns.append(line_audio)
 
+                    # For character 1: actual audio if speaker_idx == 0, else silence
+                    if speaker_idx == 0:
+                        audio_char1_turns.append(line_audio)
+                    else:
+                        audio_char1_turns.append(np.zeros_like(line_audio))
+
+                    # For character 2: actual audio if speaker_idx == 1, else silence
+                    if speaker_idx == 1:
+                        audio_char2_turns.append(line_audio)
+                    else:
+                        audio_char2_turns.append(np.zeros_like(line_audio))
+
                     if pbar:
                         pbar.update_absolute(line_idx + 1, total_steps)
 
@@ -665,13 +708,26 @@ else:
                 if pause_after_speaker > 0:
                     silence_samples = int(pause_after_speaker * sample_rate)
                     silence = np.zeros(silence_samples, dtype=np.float32)
+                    # Original mixed audio
                     audio_out = audio_turns[0]
                     for turn in audio_turns[1:]:
                         audio_out = np.concatenate([audio_out, silence, turn], axis=0)
+                    # Character 1 audio
+                    audio_char1_out = audio_char1_turns[0]
+                    for turn in audio_char1_turns[1:]:
+                        audio_char1_out = np.concatenate([audio_char1_out, silence, turn], axis=0)
+                    # Character 2 audio
+                    audio_char2_out = audio_char2_turns[0]
+                    for turn in audio_char2_turns[1:]:
+                        audio_char2_out = np.concatenate([audio_char2_out, silence, turn], axis=0)
                 else:
                     audio_out = np.concatenate(audio_turns, axis=0)
+                    audio_char1_out = np.concatenate(audio_char1_turns, axis=0)
+                    audio_char2_out = np.concatenate(audio_char2_turns, axis=0)
 
-                output = numpy_audio_to_comfy(audio_out, sample_rate)
+                output1 = numpy_audio_to_comfy(audio_out, sample_rate)
+                output2 = numpy_audio_to_comfy(audio_char1_out, sample_rate)
+                output3 = numpy_audio_to_comfy(audio_char2_out, sample_rate)
 
             finally:
                 # Always run on completion, cancellation, or error.
@@ -680,7 +736,7 @@ else:
                 elif offload_to_cpu:
                     offload_engine_to_cpu()
 
-            return (output,)
+            return (output1, output2, output3)
 
 
 # ---------------------------------------------------------------------------
