@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field, conint, model_validator
 from pydantic.functional_validators import SkipValidation
 from typing_extensions import Annotated
 
-from fish_speech.content_sequence import TextPart, VQPart
+from fish_speech_s2.content_sequence import TextPart, VQPart
 
 
 class ServeVQPart(BaseModel):

@@ -27,7 +27,7 @@ torch.backends.cudnn.allow_tf32 = True
 # register eval resolver
 OmegaConf.register_new_resolver("eval", eval)
 
-import fish_speech.utils as utils
+import fish_speech_s2.utils as utils
 
 log = utils.RankedLogger(__name__, rank_zero_only=True)
 

@@ -16,7 +16,7 @@ from hydra.utils import instantiate
 from loguru import logger
 from omegaconf import OmegaConf
 
-from fish_speech.utils.file import AUDIO_EXTENSIONS, list_files, load_filelist
+from fish_speech_s2.utils.file import AUDIO_EXTENSIONS, list_files, load_filelist
 
 # register eval resolver
 OmegaConf.register_new_resolver("eval", eval)
@@ -50,7 +50,7 @@ def get_model(
     checkpoint_path: str = "checkpoints/openaudio-s1-mini/codec.pth",
     device: str | torch.device = "cuda",
 ):
-    with initialize(version_base="1.3", config_path="../../fish_speech/configs"):
+    with initialize(version_base="1.3", config_path="../../fish_speech_s2/configs"):
         cfg = compose(config_name=config_name)
 
     model = instantiate(cfg)

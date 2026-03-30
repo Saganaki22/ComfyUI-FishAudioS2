@@ -24,7 +24,7 @@ from kui.asgi import (
 from loguru import logger
 from typing_extensions import Annotated
 
-from fish_speech.utils.schema import (
+from fish_speech_s2.utils.schema import (
     AddReferenceRequest,
     AddReferenceResponse,
     DeleteReferenceResponse,

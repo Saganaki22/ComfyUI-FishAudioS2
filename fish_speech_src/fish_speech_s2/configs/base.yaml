@@ -53,7 +53,7 @@ callbacks:
     log_momentum: false
 
   grad_norm_monitor:
-    _target_: fish_speech.callbacks.GradNormMonitor
+    _target_: fish_speech_s2.callbacks.GradNormMonitor
     norm_type: 2
     logging_interval: step
 

@@ -18,7 +18,7 @@ hf download fishaudio/s2-pro --local-dir checkpoints/s2-pro
 ### 1. 참조 오디오에서 VQ 토큰 가져오기
 
 ```bash
-python fish_speech/models/dac/inference.py \
+python fish_speech_s2/models/dac/inference.py \
     -i "test.wav" \
     --checkpoint-path "checkpoints/s2-pro/codec.pth"
 ```
@@ -28,7 +28,7 @@ python fish_speech/models/dac/inference.py \
 ### 2. 텍스트에서 Semantic 토큰 생성:
 
 ```bash
-python fish_speech/models/text2semantic/inference.py \
+python fish_speech_s2/models/text2semantic/inference.py \
     --text "변환하려는 텍스트" \
     --prompt-text "참조 텍스트" \
     --prompt-tokens "fake.npy" \
@@ -47,7 +47,7 @@ python fish_speech/models/text2semantic/inference.py \
 ### 3. 시맨틱 토큰에서 음성 생성:
 
 ```bash
-python fish_speech/models/dac/inference.py \
+python fish_speech_s2/models/dac/inference.py \
     -i "codes_0.npy" \
 ```
 

@@ -8,7 +8,7 @@ import torch
 from lightning import LightningDataModule
 from torch.utils.data import DataLoader, Dataset
 
-from fish_speech.utils import RankedLogger
+from fish_speech_s2.utils import RankedLogger
 
 logger = RankedLogger(__name__, rank_zero_only=False)
 

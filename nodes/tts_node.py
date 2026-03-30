@@ -211,7 +211,7 @@ class FishS2TTS:
 
         engine = self._get_engine(model_path, device, precision, attention, compile_model, keep_model_loaded, offload_to_cpu)
 
-        from fish_speech.utils.schema import ServeTTSRequest
+        from fish_speech_s2.utils.schema import ServeTTSRequest
 
         pbar = ProgressBar(3) if _PBAR else None
 

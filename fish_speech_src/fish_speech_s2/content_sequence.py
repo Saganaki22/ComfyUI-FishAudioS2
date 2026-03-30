@@ -4,7 +4,7 @@ from typing import List, Literal, Union
 import numpy as np
 import torch
 
-from fish_speech.tokenizer import (
+from fish_speech_s2.tokenizer import (
     IM_END_TOKEN,
     MODALITY_TOKENS,
     FishTokenizer,

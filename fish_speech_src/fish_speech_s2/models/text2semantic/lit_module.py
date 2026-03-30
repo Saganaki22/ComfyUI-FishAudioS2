@@ -5,10 +5,10 @@ import torch
 import torch.nn.functional as F
 from lightning.pytorch.utilities.types import OptimizerLRScheduler
 
-import fish_speech.utils as utils
+import fish_speech_s2.utils as utils
 
 CODEBOOK_PAD_TOKEN_ID = 0
-from fish_speech.models.text2semantic.llama import NaiveTransformer
+from fish_speech_s2.models.text2semantic.llama import NaiveTransformer
 
 log = utils.RankedLogger(__name__, rank_zero_only=True)
 

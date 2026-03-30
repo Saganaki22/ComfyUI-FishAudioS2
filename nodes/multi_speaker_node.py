@@ -343,7 +343,7 @@ if _V3:
 
             engine = _get_engine(model_path, device, precision, attention, compile_model, keep_model_loaded, offload_to_cpu)
 
-            from fish_speech.utils.schema import ServeReferenceAudio, ServeTTSRequest
+            from fish_speech_s2.utils.schema import ServeReferenceAudio, ServeTTSRequest
 
             # num_speakers is a dict from DynamicCombo:
             # {"num_speakers": "3", "speaker_1_audio": ..., "speaker_1_ref_text": ..., ...}
@@ -565,7 +565,7 @@ else:
 
             engine = _get_engine(model_path, device, precision, attention, compile_model, keep_model_loaded, offload_to_cpu)
 
-            from fish_speech.utils.schema import ServeReferenceAudio, ServeTTSRequest
+            from fish_speech_s2.utils.schema import ServeReferenceAudio, ServeTTSRequest
 
             # Build per-speaker reference map (0-based index)
             references = {}

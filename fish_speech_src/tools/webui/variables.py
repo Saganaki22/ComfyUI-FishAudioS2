@@ -1,4 +1,4 @@
-from fish_speech.i18n import i18n
+from fish_speech_s2.i18n import i18n
 
 HEADER_MD = f"""# Fish Speech
 

@@ -58,7 +58,7 @@ venv.bak/
 # Project Dependencies
 # --------------------
 .pdm-python
-/fish_speech.egg-info
+/fish_speech_s2.egg-info
 
 # Data and Model Files
 # --------------------
@@ -86,7 +86,7 @@ filelists/
 *.pkl
 *.pickle
 *.lab
-/fish_speech/text/cmudict_cache.pickle
+/fish_speech_s2/text/cmudict_cache.pickle
 
 # Cache and Temporary Files
 # --------------------------

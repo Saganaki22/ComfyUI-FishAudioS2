@@ -15,16 +15,16 @@ from lightning import LightningDataModule
 from torch.distributed import get_rank, get_world_size, is_initialized
 from torch.utils.data import DataLoader, Dataset, IterableDataset, get_worker_info
 
-from fish_speech.content_sequence import ContentSequence, TextPart, VQPart
+from fish_speech_s2.content_sequence import ContentSequence, TextPart, VQPart
 
 CODEBOOK_PAD_TOKEN_ID = 0
 
-from fish_speech.datasets.protos.text_data_pb2 import SampledData
-from fish_speech.datasets.protos.text_data_stream import read_pb_stream
-from fish_speech.text.clean import clean_text
-from fish_speech.tokenizer import FishTokenizer
-from fish_speech.utils import RankedLogger
-from fish_speech.utils.braceexpand import braceexpand
+from fish_speech_s2.datasets.protos.text_data_pb2 import SampledData
+from fish_speech_s2.datasets.protos.text_data_stream import read_pb_stream
+from fish_speech_s2.text.clean import clean_text
+from fish_speech_s2.tokenizer import FishTokenizer
+from fish_speech_s2.utils import RankedLogger
+from fish_speech_s2.utils.braceexpand import braceexpand
 
 log = RankedLogger(__name__, rank_zero_only=True)
 

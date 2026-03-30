@@ -15,7 +15,7 @@ from torch.nn import functional as F
 from torch.nn.attention import SDPBackend, sdpa_kernel
 from torch.utils.checkpoint import checkpoint
 
-from fish_speech.models.text2semantic.lora import LoraConfig, setup_lora
+from fish_speech_s2.models.text2semantic.lora import LoraConfig, setup_lora
 
 
 # ---------------------------------------------------------------------------
@@ -702,7 +702,7 @@ class BaseTransformer(nn.Module):
         Actual CUDA-side quantization occurs on the first forward pass.
         """
         # Import wrapper locally to avoid circular dependency or global import issues
-        from fish_speech.tokenizer import FishTokenizer
+        from fish_speech_s2.tokenizer import FishTokenizer
 
         config = BaseModelArgs.from_pretrained(str(path))
         if max_length is not None:

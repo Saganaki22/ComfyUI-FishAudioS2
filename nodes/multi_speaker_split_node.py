@@ -206,7 +206,7 @@ if _V3:
 
             engine = _get_engine(model_path, device, precision, attention, compile_model, keep_model_loaded, offload_to_cpu)
 
-            from fish_speech.utils.schema import ServeReferenceAudio, ServeTTSRequest
+            from fish_speech_s2.utils.schema import ServeReferenceAudio, ServeTTSRequest
 
             n = int(num_speakers["num_speakers"])
 
@@ -399,7 +399,7 @@ else:
 
             engine = _get_engine(model_path, device, precision, attention, compile_model, keep_model_loaded, offload_to_cpu)
 
-            from fish_speech.utils.schema import ServeReferenceAudio, ServeTTSRequest
+            from fish_speech_s2.utils.schema import ServeReferenceAudio, ServeTTSRequest
 
             references = {}
             missing = []

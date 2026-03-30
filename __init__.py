@@ -167,7 +167,7 @@ def _ensure_fish_source() -> bool:
         sys.path.insert(0, fish_src_str)
 
     try:
-        import fish_speech.models  # noqa: F401
+        import fish_speech_s2.models  # noqa: F401
         return True
     except ImportError as e:
         logger.error(f"fish_speech not importable from {_FISH_SRC}: {e}")

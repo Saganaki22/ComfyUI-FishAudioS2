@@ -18,7 +18,7 @@ hf download fishaudio/s2-pro --local-dir checkpoints/s2-pro
 ### 1. Get VQ tokens from reference audio
 
 ```bash
-python fish_speech/models/dac/inference.py \
+python fish_speech_s2/models/dac/inference.py \
     -i "test.wav" \
     --checkpoint-path "checkpoints/s2-pro/codec.pth"
 ```
@@ -28,7 +28,7 @@ You should get a `fake.npy` and a `fake.wav`.
 ### 2. Generate Semantic tokens from text:
 
 ```bash
-python fish_speech/models/text2semantic/inference.py \
+python fish_speech_s2/models/text2semantic/inference.py \
     --text "The text you want to convert" \
     --prompt-text "Your reference text" \
     --prompt-tokens "fake.npy" \
@@ -47,7 +47,7 @@ This command will create a `codes_N` file in the working directory, where N is a
 ### 3. Generate vocals from semantic tokens:
 
 ```bash
-python fish_speech/models/dac/inference.py \
+python fish_speech_s2/models/dac/inference.py \
     -i "codes_0.npy" \
 ```
 

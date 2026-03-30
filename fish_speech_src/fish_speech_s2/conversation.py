@@ -5,7 +5,7 @@ from typing import Literal
 import torch
 from transformers import PreTrainedTokenizerFast
 
-from fish_speech.content_sequence import (
+from fish_speech_s2.content_sequence import (
     AudioPart,
     BasePart,
     ContentSequence,
@@ -13,7 +13,7 @@ from fish_speech.content_sequence import (
     TextPart,
     VQPart,
 )
-from fish_speech.tokenizer import IM_END_TOKEN, IM_START_TOKEN, MODALITY_TOKENS
+from fish_speech_s2.tokenizer import IM_END_TOKEN, IM_START_TOKEN, MODALITY_TOKENS
 
 
 @dataclass(kw_only=True)

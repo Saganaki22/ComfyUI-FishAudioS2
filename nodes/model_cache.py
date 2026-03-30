@@ -85,7 +85,7 @@ def offload_engine_to_cpu() -> None:
     # our offload message as soon as it finishes that job. We use a long timeout
     # to cover the worst case (long generation cancelled mid-way).
     try:
-        from fish_speech.models.text2semantic.inference import GenerateRequest
+        from fish_speech_s2.models.text2semantic.inference import GenerateRequest
 
         offload_response: queue.Queue = queue.Queue()
         engine.llama_queue.put(
@@ -152,7 +152,7 @@ def resume_engine_to_cuda(device: str = "cuda") -> None:
 
     # --- Ask the LLaMA worker thread to move back to device ---
     try:
-        from fish_speech.models.text2semantic.inference import GenerateRequest
+        from fish_speech_s2.models.text2semantic.inference import GenerateRequest
 
         response_queue: queue.Queue = queue.Queue()
         engine.llama_queue.put(

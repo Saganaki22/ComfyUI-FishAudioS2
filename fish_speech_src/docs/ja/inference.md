@@ -18,7 +18,7 @@ hf download fishaudio/s2-pro --local-dir checkpoints/s2-pro
 ### 1. リファレンスオーディオから VQ トークンを取得する
 
 ```bash
-python fish_speech/models/dac/inference.py \
+python fish_speech_s2/models/dac/inference.py \
     -i "test.wav" \
     --checkpoint-path "checkpoints/s2-pro/codec.pth"
 ```
@@ -28,7 +28,7 @@ python fish_speech/models/dac/inference.py \
 ### 2. テキストから Semantic トークンを生成する：
 
 ```bash
-python fish_speech/models/text2semantic/inference.py \
+python fish_speech_s2/models/text2semantic/inference.py \
     --text "変換したいテキスト" \
     --prompt-text "リファレンステキスト" \
     --prompt-tokens "fake.npy" \
@@ -47,7 +47,7 @@ python fish_speech/models/text2semantic/inference.py \
 ### 3. セマンティックトークンから音声を生成する：
 
 ```bash
-python fish_speech/models/dac/inference.py \
+python fish_speech_s2/models/dac/inference.py \
     -i "codes_0.npy" \
 ```
 

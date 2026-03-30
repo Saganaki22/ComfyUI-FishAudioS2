@@ -95,13 +95,13 @@ huggingface-cli download fishaudio/openaudio-s1-mini --local-dir checkpoints/ope
 أخيرًا، يمكنك بدء الضبط الدقيق عن طريق تشغيل الأمر التالي:
 
 ```bash
-python fish_speech/train.py --config-name text2semantic_finetune \
+python fish_speech_s2/train.py --config-name text2semantic_finetune \
     project=$project \
     +lora@model.model.lora_config=r_8_alpha_16
 ```
 
 !!! note "ملاحظة"
-    يمكنك تعديل معلمات التدريب مثل `batch_size`، `gradient_accumulation_steps`، وما إلى ذلك لتناسب ذاكرة وحدة معالجة الرسومات الخاصة بك عن طريق تعديل `fish_speech/configs/text2semantic_finetune.yaml`.
+    يمكنك تعديل معلمات التدريب مثل `batch_size`، `gradient_accumulation_steps`، وما إلى ذلك لتناسب ذاكرة وحدة معالجة الرسومات الخاصة بك عن طريق تعديل `fish_speech_s2/configs/text2semantic_finetune.yaml`.
 
 !!! note "ملاحظة"
     لمستخدمي Windows، يمكنك استخدام `trainer.strategy.process_group_backend=gloo` لتجنب مشكلات `nccl`.

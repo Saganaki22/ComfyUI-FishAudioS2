@@ -175,7 +175,7 @@ class FishS2VoiceCloneTTS:
 
         engine = self._get_engine(model_path, device, precision, attention, compile_model, keep_model_loaded, offload_to_cpu)
 
-        from fish_speech.utils.schema import ServeReferenceAudio, ServeTTSRequest
+        from fish_speech_s2.utils.schema import ServeReferenceAudio, ServeTTSRequest
 
         pbar = ProgressBar(4) if _PBAR else None
 

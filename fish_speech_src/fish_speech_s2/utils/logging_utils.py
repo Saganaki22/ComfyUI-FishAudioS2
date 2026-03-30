@@ -5,7 +5,7 @@ except ImportError:
     def rank_zero_only(fn):
         return fn
 
-from fish_speech.utils import logger as log
+from fish_speech_s2.utils import logger as log
 
 
 @rank_zero_only

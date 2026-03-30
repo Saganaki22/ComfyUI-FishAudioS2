@@ -16,12 +16,12 @@ import torch._inductor.config
 from loguru import logger
 from tqdm import tqdm
 
-from fish_speech.content_sequence import (
+from fish_speech_s2.content_sequence import (
     TextPart,
     VQPart,
 )
-from fish_speech.conversation import Conversation, Message
-from fish_speech.tokenizer import IM_END_TOKEN
+from fish_speech_s2.conversation import Conversation, Message
+from fish_speech_s2.tokenizer import IM_END_TOKEN
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 torch._inductor.config.coordinate_descent_tuning = True
@@ -33,7 +33,7 @@ if hasattr(torch._inductor.config, "fx_graph_cache"):
 
 from torch.nn.attention import SDPBackend, sdpa_kernel
 
-from fish_speech.models.text2semantic.llama import (
+from fish_speech_s2.models.text2semantic.llama import (
     BaseTransformer,
     DualARTransformer,
     NaiveTransformer,

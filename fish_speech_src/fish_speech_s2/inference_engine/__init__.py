@@ -6,17 +6,17 @@ import numpy as np
 import torch
 from loguru import logger
 
-from fish_speech.inference_engine.reference_loader import ReferenceLoader
-from fish_speech.inference_engine.utils import InferenceResult, wav_chunk_header
-from fish_speech.inference_engine.vq_manager import VQManager
-from fish_speech.models.dac.modded_dac import DAC
-from fish_speech.models.text2semantic.inference import (
+from fish_speech_s2.inference_engine.reference_loader import ReferenceLoader
+from fish_speech_s2.inference_engine.utils import InferenceResult, wav_chunk_header
+from fish_speech_s2.inference_engine.vq_manager import VQManager
+from fish_speech_s2.models.dac.modded_dac import DAC
+from fish_speech_s2.models.text2semantic.inference import (
     GenerateRequest,
     GenerateResponse,
     WrappedGenerateResponse,
 )
-from fish_speech.utils import autocast_exclude_mps, set_seed
-from fish_speech.utils.schema import ServeTTSRequest
+from fish_speech_s2.utils import autocast_exclude_mps, set_seed
+from fish_speech_s2.utils.schema import ServeTTSRequest
 
 
 class TTSInferenceEngine(ReferenceLoader, VQManager):

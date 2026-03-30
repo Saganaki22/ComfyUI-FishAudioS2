@@ -96,13 +96,13 @@ huggingface-cli download fishaudio/s2-pro --local-dir checkpoints/s2-pro
 最后, 你可以运行以下命令来启动微调:
 
 ```bash
-python fish_speech/train.py --config-name text2semantic_finetune \
+python fish_speech_s2/train.py --config-name text2semantic_finetune \
     project=$project \
     +lora@model.model.lora_config=r_8_alpha_16
 ```
 
 !!! note
-    你可以通过修改 `fish_speech/configs/text2semantic_finetune.yaml` 来修改训练参数如 `batch_size`, `gradient_accumulation_steps` 等, 来适应你的显存.
+    你可以通过修改 `fish_speech_s2/configs/text2semantic_finetune.yaml` 来修改训练参数如 `batch_size`, `gradient_accumulation_steps` 等, 来适应你的显存.
 
 !!! note
     对于 Windows 用户, 你可以使用 `trainer.strategy.process_group_backend=gloo` 来避免 `nccl` 的问题.

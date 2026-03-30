@@ -406,7 +406,7 @@ pip install "descript-audiotools>=0.7.2" --no-deps
 
 ### `fish_speech` 包冲突？
 
-如果看到 `ImportError: cannot import name 'AUDIO_EXTENSIONS' from 'fish_speech.utils.file'` 且路径指向其他自定义节点目录（如 `comfyui-mixlab-nodes`），说明另一个节点有自己的 `fish_speech` 文件夹，通过 `sys.path` 与本节点冲突。请禁用或删除冲突节点。**不要** 通过 pip 安装 `fish_speech` — 它已内置于本节点中。
+如果看到 `ImportError: cannot import name 'AUDIO_EXTENSIONS' from 'fish_speech_s2.utils.file'` 且路径指向其他自定义节点目录（如 `comfyui-mixlab-nodes`），说明另一个节点有自己的 `fish_speech` 文件夹，通过 `sys.path` 与本节点冲突。请禁用或删除冲突节点。**不要** 通过 pip 安装 `fish_speech` — 它已内置于本节点中。
 
 ### 显存不足？
 

@@ -1000,7 +1000,7 @@ if __name__ == "__main__":
     from omegaconf import OmegaConf
 
     # 配置路径
-    config_path = "fish_speech/configs/modded_dac_vq.yaml"
+    config_path = "fish_speech_s2/configs/modded_dac_vq.yaml"
     checkpoint_path = "checkpoints/s2-pro/codec.pth"
     codes_path = "./output/codes_0.npy"  # 你的 codes 文件路径
     output_path = "reconstructed_from_codes.wav"

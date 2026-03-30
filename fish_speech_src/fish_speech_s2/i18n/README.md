@@ -2,7 +2,7 @@
 
 The `i18n` folder within the `fish_speech` directory contains files initially sourced from the RVC project. In compliance with the MIT license under which these files were released, we acknowledge the original authors and sources below:
 
-### fish_speech/i18n/core.py
+### fish_speech_s2/i18n/core.py
 
 **Related code from RVC:**
 [https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/blob/83d6a64e675d9bbd6e92ee450c5f807ed2bb54d8/i18n/i18n.py](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/blob/83d6a64e675d9bbd6e92ee450c5f807ed2bb54d8/i18n/i18n.py)
@@ -13,7 +13,7 @@ add localization(添加本地化) [RVC-Project/Retrieval-based-Voice-Conversion-
 **Initial author:**
 [@L4Ph](https://github.com/L4Ph)
 
-### fish_speech/i18n/scan.py
+### fish_speech_s2/i18n/scan.py
 
 **Related code from RVC:**
 [https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/blob/83d6a64e675d9bbd6e92ee450c5f807ed2bb54d8/i18n/scan_i18n.py](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/blob/83d6a64e675d9bbd6e92ee450c5f807ed2bb54d8/i18n/scan_i18n.py)

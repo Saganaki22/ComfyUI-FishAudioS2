@@ -2,7 +2,7 @@ from typing import Callable
 
 import gradio as gr
 
-from fish_speech.i18n import i18n
+from fish_speech_s2.i18n import i18n
 from tools.webui.variables import HEADER_MD, TEXTBOX_PLACEHOLDER
 
 

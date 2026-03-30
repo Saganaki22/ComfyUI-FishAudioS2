@@ -9,8 +9,8 @@ import requests
 from pydub import AudioSegment
 from pydub.playback import play
 
-from fish_speech.utils.file import audio_to_bytes, read_ref_text
-from fish_speech.utils.schema import ServeReferenceAudio, ServeTTSRequest
+from fish_speech_s2.utils.file import audio_to_bytes, read_ref_text
+from fish_speech_s2.utils.schema import ServeReferenceAudio, ServeTTSRequest
 
 
 def parse_args():

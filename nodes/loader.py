@@ -375,9 +375,9 @@ def load_engine(
             )
             attention = "sdpa"
     try:
-        from fish_speech.models.dac.inference import load_model as load_decoder_model
-        from fish_speech.models.text2semantic.inference import launch_thread_safe_queue
-        from fish_speech.inference_engine import TTSInferenceEngine
+        from fish_speech_s2.models.dac.inference import load_model as load_decoder_model
+        from fish_speech_s2.models.text2semantic.inference import launch_thread_safe_queue
+        from fish_speech_s2.inference_engine import TTSInferenceEngine
     except ImportError as e:
         raise ImportError(
             f"fish_speech package not found: {e}\n"
@@ -465,7 +465,7 @@ def _make_attention_forward(attention: str):
 
     if attention == "sdpa":
         def _forward(self, x, freqs_cis, mask, input_pos=None):
-            from fish_speech.models.text2semantic.llama import apply_rotary_emb
+            from fish_speech_s2.models.text2semantic.llama import apply_rotary_emb
             import torch.nn.functional as F
             bsz, seqlen, _ = x.shape
             q_size = self.n_head * self.head_dim
@@ -497,7 +497,7 @@ def _make_attention_forward(attention: str):
 
     if attention == "flash_attention":
         def _forward(self, x, freqs_cis, mask, input_pos=None):
-            from fish_speech.models.text2semantic.llama import apply_rotary_emb
+            from fish_speech_s2.models.text2semantic.llama import apply_rotary_emb
             from torch.nn.attention import SDPBackend, sdpa_kernel
             import torch.nn.functional as F
             bsz, seqlen, _ = x.shape
@@ -540,7 +540,7 @@ def _make_attention_forward(attention: str):
             )
 
         def _forward(self, x, freqs_cis, mask, input_pos=None):
-            from fish_speech.models.text2semantic.llama import apply_rotary_emb
+            from fish_speech_s2.models.text2semantic.llama import apply_rotary_emb
             from sageattention import sageattn
             import torch.nn.functional as F
             bsz, seqlen, _ = x.shape
@@ -586,7 +586,7 @@ def _patch_attention_class(attention: str):
         return None, None
 
     try:
-        from fish_speech.models.text2semantic.llama import Attention
+        from fish_speech_s2.models.text2semantic.llama import Attention
     except ImportError as e:
         logger.warning(f"Cannot patch Attention class: {e}")
         return None, None

@@ -18,7 +18,7 @@ hf download fishaudio/s2-pro --local-dir checkpoints/s2-pro
 ### 1. 从参考音频获取 VQ tokens
 
 ```bash
-python fish_speech/models/dac/inference.py \
+python fish_speech_s2/models/dac/inference.py \
     -i "test.wav" \
     --checkpoint-path "checkpoints/s2-pro/codec.pth"
 ```
@@ -28,7 +28,7 @@ python fish_speech/models/dac/inference.py \
 ### 2. 从文本生成 Semantic tokens：
 
 ```bash
-python fish_speech/models/text2semantic/inference.py \
+python fish_speech_s2/models/text2semantic/inference.py \
     --text "您想要转换的文本" \
     --prompt-text "您的参考文本" \
     --prompt-tokens "fake.npy" \
@@ -47,7 +47,7 @@ python fish_speech/models/text2semantic/inference.py \
 ### 3. 从语义令牌生成声音：
 
 ```bash
-python fish_speech/models/dac/inference.py \
+python fish_speech_s2/models/dac/inference.py \
     -i "codes_0.npy" \
 ```
 

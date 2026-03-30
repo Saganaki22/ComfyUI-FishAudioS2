@@ -412,7 +412,7 @@ If you see `RuntimeError: Failed to create AudioDecoder ... MockDecoder() takes 
 
 ### Conflicting `fish_speech` Package?
 
-If you see `ImportError: cannot import name 'AUDIO_EXTENSIONS' from 'fish_speech.utils.file'` pointing to another custom node's directory (e.g. `comfyui-mixlab-nodes`), a different node has its own `fish_speech` folder that conflicts with ours via `sys.path`. Disable the conflicting node or remove it. Do **not** pip-install `fish_speech` — it is bundled inside this node.
+If you see `ImportError: cannot import name 'AUDIO_EXTENSIONS' from 'fish_speech_s2.utils.file'` pointing to another custom node's directory (e.g. `comfyui-mixlab-nodes`), a different node has its own `fish_speech` folder that conflicts with ours via `sys.path`. Disable the conflicting node or remove it. Do **not** pip-install `fish_speech` — it is bundled inside this node.
 
 ### Out of Memory?
 

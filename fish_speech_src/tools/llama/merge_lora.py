@@ -9,8 +9,8 @@ from hydra import compose, initialize
 from hydra.utils import instantiate
 from loguru import logger
 
-from fish_speech.models.text2semantic.llama import BaseTransformer
-from fish_speech.models.text2semantic.lora import get_merged_state_dict
+from fish_speech_s2.models.text2semantic.llama import BaseTransformer
+from fish_speech_s2.models.text2semantic.lora import get_merged_state_dict
 
 
 @click.command()
@@ -24,7 +24,7 @@ def merge(lora_config, base_weight, lora_weight, output):
         f"Merging {base_weight} and {lora_weight} into {output} with {lora_config}"
     )
 
-    with initialize(version_base="1.3", config_path="../../fish_speech/configs/lora"):
+    with initialize(version_base="1.3", config_path="../../fish_speech_s2/configs/lora"):
         cfg = compose(config_name=lora_config)
 
     lora_config = instantiate(cfg)

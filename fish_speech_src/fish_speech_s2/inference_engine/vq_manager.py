@@ -3,7 +3,7 @@ from typing import Callable
 import torch
 from loguru import logger
 
-from fish_speech.models.dac.modded_dac import DAC
+from fish_speech_s2.models.dac.modded_dac import DAC
 
 
 class VQManager:

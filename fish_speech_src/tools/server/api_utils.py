@@ -13,8 +13,8 @@ from kui.asgi import (
 from loguru import logger
 from pydantic import BaseModel
 
-from fish_speech.inference_engine import TTSInferenceEngine
-from fish_speech.utils.schema import ServeTTSRequest
+from fish_speech_s2.inference_engine import TTSInferenceEngine
+from fish_speech_s2.utils.schema import ServeTTSRequest
 from tools.server.inference import inference_wrapper as inference
 
 
