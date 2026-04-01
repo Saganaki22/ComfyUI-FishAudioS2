@@ -1,8 +1,8 @@
 {
   "id": "0c358f16-3754-4bd2-be92-3d9f3f96d48c",
   "revision": 0,
-  "last_node_id": 54,
-  "last_link_id": 62,
+  "last_node_id": 58,
+  "last_link_id": 71,
   "nodes": [
     {
       "id": 7,
@@ -407,7 +407,7 @@
         126.87310597423561
       ],
       "flags": {},
-      "order": 14,
+      "order": 13,
       "mode": 4,
       "inputs": [
         {
@@ -425,41 +425,6 @@
       "widgets_values": []
     },
     {
-      "id": 47,
-      "type": "LoadAudio",
-      "pos": [
-        -107.27050997747963,
-        401.3804926611627
-      ],
-      "size": [
-        513.0899987348541,
-        185.3706037261062
-      ],
-      "flags": {},
-      "order": 8,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "AUDIO",
-          "type": "AUDIO",
-          "links": [
-            54
-          ]
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.16.4",
-        "Node name for S&R": "LoadAudio"
-      },
-      "widgets_values": [
-        "sample-2.mp3",
-        null,
-        null
-      ]
-    },
-    {
       "id": 31,
       "type": "Text Box line spot",
       "pos": [
@@ -471,7 +436,7 @@
         167.6045678068499
       ],
       "flags": {},
-      "order": 9,
+      "order": 8,
       "mode": 0,
       "inputs": [
         {
@@ -540,9 +505,10 @@
         }
       ],
       "properties": {
-        "aux_id": "Saganaki22/ComfyUI-FishAudioS2",
+        "cnr_id": "ComfyUI-fish-audio-s2",
         "ver": "c7fd402ccfa184c635599451c0f6f7e5e53a93c0",
-        "Node name for S&R": "FishS2VoiceCloneTTS"
+        "Node name for S&R": "FishS2VoiceCloneTTS",
+        "aux_id": "Saganaki22/ComfyUI-FishAudioS2"
       },
       "widgets_values": [
         "s2-pro",
@@ -556,7 +522,7 @@
         0.8,
         0.8,
         1.1,
-        0,
+        1821244836,
         "randomize",
         true,
         false,
@@ -576,7 +542,7 @@
         449.28838834045405
       ],
       "flags": {},
-      "order": 10,
+      "order": 9,
       "mode": 4,
       "inputs": [],
       "outputs": [
@@ -589,9 +555,10 @@
         }
       ],
       "properties": {
-        "aux_id": "Saganaki22/ComfyUI-FishAudioS2",
+        "cnr_id": "ComfyUI-fish-audio-s2",
         "ver": "c7fd402ccfa184c635599451c0f6f7e5e53a93c0",
-        "Node name for S&R": "FishS2TTS"
+        "Node name for S&R": "FishS2TTS",
+        "aux_id": "Saganaki22/ComfyUI-FishAudioS2"
       },
       "widgets_values": [
         "s2-pro",
@@ -605,7 +572,7 @@
         0.8,
         0.8,
         1.1,
-        0,
+        396561182,
         "randomize",
         true,
         false,
@@ -681,9 +648,10 @@
         }
       ],
       "properties": {
-        "aux_id": "Saganaki22/ComfyUI-FishAudioS2",
+        "cnr_id": "ComfyUI-fish-audio-s2",
         "ver": "c7fd402ccfa184c635599451c0f6f7e5e53a93c0",
-        "Node name for S&R": "FishS2MultiSpeakerTTS"
+        "Node name for S&R": "FishS2MultiSpeakerTTS",
+        "aux_id": "Saganaki22/ComfyUI-FishAudioS2"
       },
       "widgets_values": [
         "s2-pro",
@@ -697,7 +665,7 @@
         0.8,
         0.8,
         1.1,
-        0,
+        1981175989,
         "randomize",
         true,
         false,
@@ -738,6 +706,41 @@
       "widgets_values": []
     },
     {
+      "id": 47,
+      "type": "LoadAudio",
+      "pos": [
+        -107.27050997747963,
+        401.3804926611627
+      ],
+      "size": [
+        513.0899987348541,
+        185.3706037261062
+      ],
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "AUDIO",
+          "type": "AUDIO",
+          "links": [
+            70
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.16.4",
+        "Node name for S&R": "LoadAudio"
+      },
+      "widgets_values": [
+        "sample-2.mp3",
+        null,
+        null
+      ]
+    },
+    {
       "id": 44,
       "type": "PreviewAudio",
       "pos": [
@@ -755,7 +758,7 @@
         {
           "name": "audio",
           "type": "AUDIO",
-          "link": 55
+          "link": 71
         }
       ],
       "outputs": [],
@@ -767,25 +770,25 @@
       "widgets_values": []
     },
     {
-      "id": 51,
+      "id": 58,
       "type": "FishS2LongFormTTS",
       "pos": [
-        -95.02752009375314,
-        639.1334436128961
+        -101.0569713077595,
+        648.1130588104326
       ],
       "size": [
-        494.99077940429675,
-        1108.6780800000001
+        495.82133916442865,
+        1082.942531226196
       ],
       "flags": {},
-      "order": 13,
+      "order": 14,
       "mode": 0,
       "inputs": [
         {
           "name": "reference_audio",
           "shape": 7,
           "type": "AUDIO",
-          "link": 54
+          "link": 70
         }
       ],
       "outputs": [
@@ -793,13 +796,13 @@
           "name": "audio",
           "type": "AUDIO",
           "links": [
-            55
+            71
           ]
         }
       ],
       "properties": {
-        "aux_id": "Saganaki22/ComfyUI-FishAudioS2",
-        "ver": "c7fd402ccfa184c635599451c0f6f7e5e53a93c0",
+        "cnr_id": "ComfyUI-fish-audio-s2",
+        "ver": "4f758e2f5b8282e8f0cef04b862a61f68f737e5f",
         "Node name for S&R": "FishS2LongFormTTS"
       },
       "widgets_values": [
@@ -810,20 +813,19 @@
         "auto",
         "auto",
         0,
-        200,
-        0.8,
-        0.8,
-        1.1,
-        870822346,
+        100,
+        0.75,
+        0.75,
+        1.2,
+        952432340,
         "randomize",
-        3,
-        150,
-        true,
-        true,
-        true,
+        0,
+        50,
         true,
         false,
-        " It's not about what we have or what we achieve, but about how we experience each moment. This is the most profound secret of life."
+        false,
+        false,
+        ""
       ]
     }
   ],
@@ -909,22 +911,6 @@
       "AUDIO"
     ],
     [
-      54,
-      47,
-      0,
-      51,
-      0,
-      "AUDIO"
-    ],
-    [
-      55,
-      51,
-      0,
-      44,
-      0,
-      "AUDIO"
-    ],
-    [
       56,
       52,
       0,
@@ -977,6 +963,22 @@
       54,
       0,
       19,
+      0,
+      "AUDIO"
+    ],
+    [
+      70,
+      47,
+      0,
+      58,
+      0,
+      "AUDIO"
+    ],
+    [
+      71,
+      58,
+      0,
+      44,
       0,
       "AUDIO"
     ]
@@ -1052,13 +1054,13 @@
   "extra": {
     "workflowRendererVersion": "LG",
     "ds": {
-      "scale": 0.5644739300537773,
+      "scale": 0.31863081771035684,
       "offset": [
-        1114.2242930636119,
-        -238.18003265001357
+        2335.9310285880642,
+        -205.29057375944558
       ]
     },
-    "frontendVersion": "1.41.21",
+    "frontendVersion": "1.42.8",
     "VHS_latentpreview": false,
     "VHS_latentpreviewrate": 0,
     "VHS_MetadataImage": true,
