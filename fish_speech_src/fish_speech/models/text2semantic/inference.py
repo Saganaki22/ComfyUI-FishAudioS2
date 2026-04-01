@@ -702,7 +702,6 @@ def generate_long(
         system_parts.append(TextPart(text="\n\nSpeech:\n", cal_loss=False))
         all_codes = torch.cat([c for c in prompt_tokens], dim=1)
         system_parts.append(VQPart(codes=all_codes, cal_loss=False))
-        # torch.save(all_codes, "debug_vq_codes.pt")
     else:
         system_parts = [
             TextPart(text="convert the provided text to speech", cal_loss=False)
@@ -763,7 +762,9 @@ def generate_long(
             # benefits from a smaller prompt (lower KV cache, faster attention).
             # Keeps system + last max_context_batches (user, assistant) pairs
             # + the current user message.
-            if max_context_batches > 0:
+            # NOTE: max_context_batches >= 0 enables trimming (0 = no context, each batch independent)
+            #       max_context_batches < 0 (e.g. -1) disables trimming entirely (unlimited context)
+            if max_context_batches >= 0:
                 # Structure: [system, u0, a0, ..., u_{n-1}, a_{n-1}, user_n]
                 # Complete pairs = (len - 2) // 2  (excluding system + current user)
                 num_complete_pairs = (len(conversation.messages) - 2) // 2
@@ -774,7 +775,7 @@ def generate_long(
                     logger.info(
                         f"Sliding window: trimmed to {num_complete_pairs} context batches "
                         f"before batch {batch_idx} generation"
-                    )
+                )
 
             # Copy for generation; tensors shared to avoid redundant data copies.
             conversation_gen = _deepcopy_share_tensors(conversation)
@@ -870,35 +871,12 @@ def generate_long(
             codes = y[1:, prompt_length:-1].clone()
             assert (codes >= 0).all(), f"Negative code found: {codes}"
 
-            # Voice anchor: capture the tail of batch 0's generated codes as a
-            # fixed reference for all subsequent batches.  This gives the model
-            # acoustic evidence of "what was just spoken" so it:
-            #   1. Does not duplicate batch 0 content into batch 1
-            #   2. Maintains voice tone consistency across batches
-            # Using a fixed anchor from batch 0 (not a rolling chain) avoids
-            # compounding quality degradation — every batch references the same
-            # clean single-pass output.
-            ANCHOR_CODEBOOK_FRAMES = 150  # ~2 seconds at 75 Hz codec rate
-
-            if batch_idx == 0:
-                # Keep the last N frames of batch 0 as the voice anchor
-                anchor_codes = codes[:, -ANCHOR_CODEBOOK_FRAMES:].cpu()
-                logger.info(
-                    f"Voice anchor captured: {anchor_codes.shape[1]} frames "
-                    f"({anchor_codes.shape[1] / 75:.1f}s)"
-                )
-
-            # Assistant message always includes the voice anchor once captured.
-            # Batch 0's assistant is read by batch 1, batch 1's by batch 2, etc.
-            # Without this the model sees "assistant said nothing" and duplicates.
-            assistant_parts = [
-                VQPart(codes=anchor_codes, cal_loss=False),
-            ]
-
+            # Add assistant message with generated codes back to conversation
+            # for sliding window context (original fish-speech behavior)
             conversation.append(
                 Message(
                     role="assistant",
-                    parts=assistant_parts,
+                    parts=[VQPart(codes=codes.cpu(), cal_loss=False)],
                     cal_loss=False,
                     modality="voice",
                     add_im_start=True,

@@ -2,6 +2,7 @@
 
 import logging
 import numpy as np
+import torch
 from typing import Tuple
 
 from .loader import (
@@ -90,13 +91,14 @@ class FishS2LongFormTTS:
             **COMMON_GENERATION_INPUTS,
             "max_context_batches": ("INT", {
                 "default": 3,
-                "min": 0,
+                "min": -1,
                 "max": 20,
                 "tooltip": (
-                    "Number of previous batches to keep as context for voice consistency. "
-                    "0 = unlimited (may OOM on very long texts). "
-                    "3 = recommended for 8-12GB VRAM. "
-                    "Higher = better consistency but more VRAM."
+                    "Previous batches to keep as context for voice consistency. "
+                    "0 = no context (each chunk independent, safest for low VRAM). "
+                    "3 = recommended for 12GB+ VRAM. "
+                    "-1 = unlimited (may OOM on very long texts). "
+                    "Auto-set to 0 when BNB/low VRAM detected."
                 ),
             }),
             "max_words_per_chunk": ("INT", {
@@ -109,21 +111,13 @@ class FishS2LongFormTTS:
                     "Higher = fewer chunks but may exceed context limits."
                 ),
             }),
-            "enable_warmup": ("BOOLEAN", {
-                "default": True,
-                "tooltip": (
-                    "Run a warmup inference without references before main TTS. "
-                    "Helps avoid OOM on low-VRAM GPUs (8GB). "
-                    "Recommended for BNB models on 8GB GPUs."
-                ),
-            }),
             "low_vram_mode": ("BOOLEAN", {
                 "default": False,
                 "tooltip": (
-                    "Enable aggressive memory optimization for low-VRAM GPUs (8GB). "
-                    "Offloads decoder to CPU during LLaMA generation, then offloads "
-                    "LLaMA before decoding. Slower but prevents OOM. "
-                    "Automatically enabled for texts > 500 chars."
+                    "Enable for low-VRAM GPUs (8GB). Does two things: "
+                    "(1) Offloads decoder/LLaMA during inference to prevent OOM. "
+                    "(2) Makes each chunk independent (no context accumulation). "
+                    "Slower but safer for long texts on limited VRAM."
                 ),
             }),
             "keep_model_loaded": ("BOOLEAN", {
@@ -193,7 +187,6 @@ class FishS2LongFormTTS:
         seed: int,
         max_context_batches: int,
         max_words_per_chunk: int,
-        enable_warmup: bool,
         low_vram_mode: bool,
         keep_model_loaded: bool,
         offload_to_cpu: bool,
@@ -227,25 +220,27 @@ class FishS2LongFormTTS:
 
         text_chunks = split_text_into_chunks(text, max_words_per_chunk=max_words_per_chunk)
         num_chunks = len(text_chunks)
-        logger.info(f"Long-form TTS: {num_chunks} chunks (max_context_batches={max_context_batches})")
 
-        if enable_warmup:
-            logger.info("Warmup inference (no references)...")
-            warmup_request = ServeTTSRequest(
-                text="<|speaker:0|>Warmup.",
-                references=[],
-                max_new_tokens=64,
-                chunk_length=chunk_length,
-                top_p=top_p,
-                repetition_penalty=repetition_penalty,
-                temperature=temperature,
-                seed=seed if seed else None,
-                format="wav",
-                max_context_batches=0,
-            )
-            for _ in engine.inference(warmup_request):
-                pass
-            logger.info("Warmup complete.")
+        # Auto-detect low VRAM and BNB models for context management
+        is_bnb_model = "bnb" in model_path.lower()
+        vram_gb = 0
+        if torch.cuda.is_available():
+            vram_gb = torch.cuda.get_device_properties(0).total_memory / (1024**3)
+        is_low_vram = vram_gb > 0 and vram_gb < 10
+
+        # For BNB, low VRAM, or low_vram_mode enabled: force no context accumulation to prevent OOM
+        # This makes each batch independent (fresh start) - no KV cache growth across batches
+        effective_max_context = max_context_batches
+        if is_bnb_model or is_low_vram or low_vram_mode:
+            if max_context_batches == -1 or max_context_batches > 0:
+                reason = "BNB" if is_bnb_model else ("Low VRAM" if is_low_vram else "low_vram_mode")
+                logger.info(
+                    f"{reason}{' (' + str(round(vram_gb, 1)) + 'GB)' if vram_gb > 0 else ''} — "
+                    f"limiting context batches: {max_context_batches} → 0 (each batch independent)"
+                )
+                effective_max_context = 0
+
+        logger.info(f"Long-form TTS: {num_chunks} chunks (max_context_batches={effective_max_context})")
 
         pbar = ProgressBar(num_chunks) if _PBAR else None
 
@@ -269,7 +264,7 @@ class FishS2LongFormTTS:
             seed=seed if seed else None,
             streaming=False,
             format="wav",
-            max_context_batches=max_context_batches,
+            max_context_batches=effective_max_context,
             low_vram_mode=low_vram_mode,
         )
 
