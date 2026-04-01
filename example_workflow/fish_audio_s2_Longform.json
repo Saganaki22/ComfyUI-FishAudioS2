@@ -1,8 +1,8 @@
 {
   "id": "0c358f16-3754-4bd2-be92-3d9f3f96d48c",
   "revision": 0,
-  "last_node_id": 58,
-  "last_link_id": 71,
+  "last_node_id": 59,
+  "last_link_id": 73,
   "nodes": [
     {
       "id": 7,
@@ -522,7 +522,7 @@
         0.8,
         0.8,
         1.1,
-        1821244836,
+        848556679,
         "randomize",
         true,
         false,
@@ -572,7 +572,7 @@
         0.8,
         0.8,
         1.1,
-        396561182,
+        1875790456,
         "randomize",
         true,
         false,
@@ -665,7 +665,7 @@
         0.8,
         0.8,
         1.1,
-        1981175989,
+        1792214114,
         "randomize",
         true,
         false,
@@ -725,7 +725,7 @@
           "name": "AUDIO",
           "type": "AUDIO",
           "links": [
-            70
+            72
           ]
         }
       ],
@@ -758,7 +758,7 @@
         {
           "name": "audio",
           "type": "AUDIO",
-          "link": 71
+          "link": 73
         }
       ],
       "outputs": [],
@@ -770,15 +770,15 @@
       "widgets_values": []
     },
     {
-      "id": 58,
+      "id": 59,
       "type": "FishS2LongFormTTS",
       "pos": [
         -101.0569713077595,
         648.1130588104326
       ],
       "size": [
-        495.82133916442865,
-        1082.942531226196
+        500.4307534170166,
+        1071.6409624049925
       ],
       "flags": {},
       "order": 14,
@@ -788,7 +788,7 @@
           "name": "reference_audio",
           "shape": 7,
           "type": "AUDIO",
-          "link": 70
+          "link": 72
         }
       ],
       "outputs": [
@@ -796,31 +796,32 @@
           "name": "audio",
           "type": "AUDIO",
           "links": [
-            71
+            73
           ]
         }
       ],
       "properties": {
         "cnr_id": "ComfyUI-fish-audio-s2",
-        "ver": "4f758e2f5b8282e8f0cef04b862a61f68f737e5f",
+        "ver": "f8aff354802c215f08105afb98d77e853b3eca9a",
         "Node name for S&R": "FishS2LongFormTTS"
       },
       "widgets_values": [
-        "s2-pro-bnb-nf4",
-        "Hello! This is a short English listening and speaking test. The goal is to help you practice pronunciation, rhythm, and clarity. Try to listen carefully to each word, and then repeat the sentences out loud at your own pace.\n\nToday is a great day to learn something new. Even a few minutes of practice can improve your confidence and communication skills. Don’t worry about making mistakes, because mistakes are a natural part of learning. Instead, focus on speaking clearly and understanding the meaning of each sentence.\n\nYou can also try recording your voice and listening back to it. This will help you notice areas where you can improve. Remember, consistency is more important than perfection. If you practice a little every day, you will see progress over time.\n\nKeep going, stay motivated, and enjoy the process of learning English!",
+        "s2-pro",
+        "The ancient library stood at the edge of the forgotten city, its stone walls weathered by centuries of wind and rain.\n  Inside, dust motes danced in the dim light that filtered through cracked skylights. Every shelf held secrets waiting\n  to be discovered.\n\n  Professor Elena Marsh pushed open the heavy oak doors for the first time in thirty years. The smell of old paper and\n  leather bindings washed over her like a wave of nostalgia. She had spent her youth in these halls, pursuing knowledge\n  with a hunger that bordered on obsession.\n\n  Her footsteps echoed across the marble floor as she made her way to the restricted section. The university had granted\n   her temporary access following the discovery of an old map hidden within a recently donated collection. The map\n  promised something impossible: the location of the lost Alexandrian extension.\n\n\n ",
         "auto",
         "auto",
         "auto",
         "auto",
         0,
         100,
-        0.75,
-        0.75,
+        0.7,
+        0.7,
         1.2,
-        952432340,
+        1878703593,
         "randomize",
         0,
         50,
+        "[professional tone] ",
         true,
         false,
         false,
@@ -967,16 +968,16 @@
       "AUDIO"
     ],
     [
-      70,
+      72,
       47,
       0,
-      58,
+      59,
       0,
       "AUDIO"
     ],
     [
-      71,
-      58,
+      73,
+      59,
       0,
       44,
       0,
@@ -1054,10 +1055,10 @@
   "extra": {
     "workflowRendererVersion": "LG",
     "ds": {
-      "scale": 0.31863081771035684,
+      "scale": 0.6830134553650709,
       "offset": [
-        2335.9310285880642,
-        -205.29057375944558
+        872.523794356441,
+        -389.18438211875775
       ]
     },
     "frontendVersion": "1.42.8",
