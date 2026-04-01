@@ -17,10 +17,12 @@ def count_words(text: str) -> int:
 def split_text_into_chunks(
     text: str,
     max_words_per_chunk: int = 200,
+    per_batch_prefix: str = "",
 ) -> List[str]:
     """
     Split text into chunks suitable for TTS, respecting sentence boundaries.
     Prepends <|speaker:0|> tag to each chunk for native batching.
+    If per_batch_prefix is provided, prepends it before the speaker tag.
     """
     text = text.strip()
     if not text:
@@ -41,8 +43,11 @@ def split_text_into_chunks(
     if buf.strip():
         sentences.append(buf.strip())
 
+    # Build prefix: speaker tag + user's custom prefix (inside the speech content)
+    prefix = f"<|speaker:0|>{per_batch_prefix}"
+
     if not sentences:
-        return [f"<|speaker:0|>{text}"] if text else []
+        return [f"{prefix}{text}"] if text else []
 
     chunks = []
     current = []
@@ -53,15 +58,15 @@ def split_text_into_chunks(
         if sent_words > max_words_per_chunk:
             if current:
                 chunk_text = " ".join(current)
-                chunks.append(f"<|speaker:0|>{chunk_text}")
+                chunks.append(f"{prefix}{chunk_text}")
                 current = []
                 current_words = 0
-            chunks.append(f"<|speaker:0|>{sent}")
+            chunks.append(f"{prefix}{sent}")
             continue
 
         if current_words + sent_words > max_words_per_chunk and current:
             chunk_text = " ".join(current)
-            chunks.append(f"<|speaker:0|>{chunk_text}")
+            chunks.append(f"{prefix}{chunk_text}")
             current = []
             current_words = 0
 
@@ -70,6 +75,6 @@ def split_text_into_chunks(
 
     if current:
         chunk_text = " ".join(current)
-        chunks.append(f"<|speaker:0|>{chunk_text}")
+        chunks.append(f"{prefix}{chunk_text}")
 
     return [c for c in chunks if c]

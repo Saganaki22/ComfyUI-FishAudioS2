@@ -111,6 +111,15 @@ class FishS2LongFormTTS:
                     "Higher = fewer chunks but may exceed context limits."
                 ),
             }),
+            "per_batch_prefix": ("STRING", {
+                "default": "",
+                "multiline": False,
+                "tooltip": (
+                    "Text/tags prepended to EVERY batch. Useful for style tags like "
+                    "'[professional tone]' that should apply to all chunks. "
+                    "Add space/newline at end if needed. Ignored if empty."
+                ),
+            }),
             "low_vram_mode": ("BOOLEAN", {
                 "default": False,
                 "tooltip": (
@@ -187,6 +196,7 @@ class FishS2LongFormTTS:
         seed: int,
         max_context_batches: int,
         max_words_per_chunk: int,
+        per_batch_prefix: str,
         low_vram_mode: bool,
         keep_model_loaded: bool,
         offload_to_cpu: bool,
@@ -218,7 +228,7 @@ class FishS2LongFormTTS:
                 )
             ]
 
-        text_chunks = split_text_into_chunks(text, max_words_per_chunk=max_words_per_chunk)
+        text_chunks = split_text_into_chunks(text, max_words_per_chunk=max_words_per_chunk, per_batch_prefix=per_batch_prefix)
         num_chunks = len(text_chunks)
 
         # Auto-detect low VRAM and BNB models for context management
