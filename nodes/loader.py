@@ -36,14 +36,33 @@ logger = logging.getLogger("FishAudioS2")
 # `from fish_speech.…` imports to *their* copy, which is incomplete (missing
 # AUDIO_EXTENSIONS, etc.) and causes ImportError at runtime.
 #
-# Inserting our own `fish_speech_src/` directory at the front of sys.path
-# guarantees Python finds *this* node's bundled copy first — regardless of
-# import order or which node loaded earlier.
+# Two-pronged fix:
+# 1. Insert our fish_speech_src/ at the front of sys.path.
+# 2. Evict any already-cached fish_speech.* modules whose __file__ does NOT
+#    live under our directory.  Python checks sys.modules before sys.path,
+#    so without this, a stale import from the wrong copy would persist even
+#    after we fix sys.path.
 # ---------------------------------------------------------------------------
 import sys as _sys
 _fish_src_path = str(Path(__file__).resolve().parent.parent / "fish_speech_src")
 if _fish_src_path not in _sys.path:
     _sys.path.insert(0, _fish_src_path)
+
+# Evict stale fish_speech modules that came from another node's copy
+_fish_src_norm = _fish_src_path.replace("\\", "/").lower()
+_stale_keys = [
+    key for key, mod in _sys.modules.items()
+    if key == "fish_speech" or key.startswith("fish_speech.")
+    if hasattr(mod, "__file__") and mod.__file__ is not None
+    and not mod.__file__.replace("\\", "/").lower().startswith(_fish_src_norm)
+]
+for _key in _stale_keys:
+    del _sys.modules[_key]
+if _stale_keys:
+    logging.getLogger("FishAudioS2").info(
+        f"Evicted {len(_stale_keys)} stale fish_speech module(s) from sys.modules "
+        f"(namespace collision with another node)"
+    )
 
 # Sub-folder name inside ComfyUI/models/
 MODELS_FOLDER_NAME = "fishaudioS2"
