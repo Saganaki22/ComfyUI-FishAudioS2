@@ -28,6 +28,23 @@ import torch
 
 logger = logging.getLogger("FishAudioS2")
 
+# ---------------------------------------------------------------------------
+# Namespace-collision guard
+# ---------------------------------------------------------------------------
+# Other custom nodes (e.g. comfyui-mixlab-nodes) also bundle a `fish_speech`
+# package.  If their path appears on sys.path first, Python resolves our
+# `from fish_speech.…` imports to *their* copy, which is incomplete (missing
+# AUDIO_EXTENSIONS, etc.) and causes ImportError at runtime.
+#
+# Inserting our own `fish_speech_src/` directory at the front of sys.path
+# guarantees Python finds *this* node's bundled copy first — regardless of
+# import order or which node loaded earlier.
+# ---------------------------------------------------------------------------
+import sys as _sys
+_fish_src_path = str(Path(__file__).resolve().parent.parent / "fish_speech_src")
+if _fish_src_path not in _sys.path:
+    _sys.path.insert(0, _fish_src_path)
+
 # Sub-folder name inside ComfyUI/models/
 MODELS_FOLDER_NAME = "fishaudioS2"
 
