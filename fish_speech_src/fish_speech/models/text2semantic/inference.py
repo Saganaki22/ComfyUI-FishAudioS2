@@ -65,6 +65,17 @@ except Exception:
     pass
 
 
+def set_cancel_event(event) -> None:
+    """Inject ComfyUI's shared cancel event when imported under a package name."""
+    global _cancel_event
+    _cancel_event = event
+
+
+def request_cancel() -> None:
+    if _cancel_event is not None:
+        _cancel_event.set()
+
+
 # ---------------------------------------------------------------------------
 # Module-level caches — pre-allocated tensors reused across every token step.
 # Keyed by (size, str(device)) so CPU, CUDA and MPS each get their own copy.
@@ -452,9 +463,11 @@ def generate(
 
 
 def init_model(checkpoint_path, device, precision, compile=False, bnb_mode=None, lazy_load=False):
+    t_model = time.perf_counter()
     model = DualARTransformer.from_pretrained(
         checkpoint_path, load_weights=True, bnb_mode=bnb_mode
     )
+    logger.info(f"from_pretrained completed in {time.perf_counter() - t_model:.1f}s")
 
     is_fp8 = "fp8" in str(checkpoint_path).lower()
     is_cuda = str(device) == "cuda"
@@ -482,12 +495,19 @@ def init_model(checkpoint_path, device, precision, compile=False, bnb_mode=None,
         # Keep model on CPU to reduce RAM usage. The worker thread will move
         # it to the target device just before each generation and back to CPU
         # afterwards, preventing the double-buffering spike (CPU + GPU copies).
+        t_place = time.perf_counter()
+        logger.info(f"Preparing lazy CPU model placement with precision={precision}...")
         if bnb_mode is not None or is_fp8:
             model = model.to(device="cpu")
         else:
             model = model.to(device="cpu", dtype=precision)
-        logger.info(f"Model loaded in lazy mode — staying on CPU until first inference ({model_bytes / 1e9:.2f} GB)")
+        logger.info(
+            f"Model loaded in lazy mode — staying on CPU until first inference "
+            f"({model_bytes / 1e9:.2f} GB, placement {time.perf_counter() - t_place:.1f}s)"
+        )
     else:
+        t_place = time.perf_counter()
+        logger.info(f"Moving model to {device} with precision={precision}...")
         if bnb_mode is not None or is_fp8:
             if is_fp8 and is_cuda:
                 _test_fp8 = torch.zeros(1, dtype=torch.float8_e4m3fn, device="cpu").to(device)
@@ -504,7 +524,7 @@ def init_model(checkpoint_path, device, precision, compile=False, bnb_mode=None,
             model = model.to(device=device)
         else:
             model = model.to(device=device, dtype=precision)
-        logger.info(f"Restored model from checkpoint")
+        logger.info(f"Restored model from checkpoint in {time.perf_counter() - t_place:.1f}s")
 
     if isinstance(model, DualARTransformer):
         decode_one_token = decode_one_token_ar
@@ -803,6 +823,12 @@ def generate_long(
             )
 
             logger.info(f"Encoded prompt shape: {encoded.shape}")
+            if encoded.size(1) > 2048:
+                logger.warning(
+                    "Encoded prompt is large. For voice cloning, this usually "
+                    "means the reference audio is long; prefill can take a long "
+                    "time before token progress starts."
+                )
             if audio_parts is not None:
                 logger.info(f"Audio parts shape: {audio_parts.shape}")
             if audio_masks is not None:

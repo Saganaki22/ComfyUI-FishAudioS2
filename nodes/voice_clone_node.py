@@ -4,6 +4,7 @@ import logging
 from typing import Tuple
 
 from .loader import (
+    audio_duration_from_comfy,
     audio_bytes_from_comfy,
     get_model_names,
     load_engine,
@@ -66,7 +67,8 @@ class FishS2VoiceCloneTTS:
                 "reference_audio": ("AUDIO", {
                     "tooltip": (
                         "Reference audio to clone the voice from. "
-                        "10-30 seconds gives the best results."
+                        "5-30 seconds gives the best results; longer clips "
+                        "make the prompt very large and slow."
                     ),
                 }),
                 "language": (LANGUAGES, {
@@ -131,8 +133,7 @@ class FishS2VoiceCloneTTS:
                     "default": "",
                     "tooltip": (
                         "Transcript of the reference audio. "
-                        "Providing this improves voice clone accuracy. "
-                        "Leave blank to let the model handle it."
+                        "Strongly recommended for stable voice cloning."
                     ),
                 }),
             },
@@ -180,6 +181,20 @@ class FishS2VoiceCloneTTS:
         pbar = ProgressBar(4) if _PBAR else None
 
         logger.info("Encoding reference audio...")
+        ref_duration = audio_duration_from_comfy(reference_audio)
+        if ref_duration > 0:
+            logger.info(f"Reference audio duration: {ref_duration:.2f}s")
+        if ref_duration > 30:
+            logger.warning(
+                "Reference audio is longer than 30s. Fish S2 voice cloning is "
+                "designed for short references; long clips create thousands of "
+                "prompt tokens and can make generation look stuck."
+            )
+        if not reference_text.strip():
+            logger.warning(
+                "Reference text is empty. Voice cloning is more stable when the "
+                "reference audio transcript is provided."
+            )
         ref_bytes = audio_bytes_from_comfy(reference_audio)
 
         if pbar:

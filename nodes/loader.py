@@ -21,6 +21,7 @@ so saved workflows are portable across machines.
 
 import io
 import logging
+import time
 from pathlib import Path
 
 import numpy as np
@@ -381,7 +382,10 @@ def load_engine(
             attention = "sdpa"
     try:
         from fish_speech.models.dac.inference import load_model as load_decoder_model
-        from fish_speech.models.text2semantic.inference import launch_thread_safe_queue
+        from fish_speech.models.text2semantic.inference import (
+            launch_thread_safe_queue,
+            set_cancel_event,
+        )
         from fish_speech.inference_engine import TTSInferenceEngine
     except ImportError as e:
         raise ImportError(
@@ -392,6 +396,9 @@ def load_engine(
             "Fix: git pull the latest version of ComfyUI-fish-audio-s2, then restart ComfyUI.\n"
             "The node will auto-install the missing package on startup."
         ) from e
+
+    from .model_cache import cancel_event
+    set_cancel_event(cancel_event)
 
     # For BNB models, resolve path to the base s2-pro checkpoint
     # (BNB quantization is applied on-the-fly, not stored separately)
@@ -404,7 +411,7 @@ def load_engine(
 
     dtype = resolve_precision(precision, model_name, device_str)
 
-    # Detect ComfyUI Dynamic VRAM mode (--fast dynamic_vram).
+    # Detect ComfyUI Dynamic VRAM mode (--enable-dynamic-vram, or auto-enabled).
     # When active, keep the LLaMA model on CPU between generations to reduce
     # RAM pressure. The worker thread moves it to GPU only during inference.
     lazy_load = False
@@ -438,12 +445,14 @@ def load_engine(
 
     decoder_ckpt = _find_decoder(model_path)
     logger.info(f"Loading Fish S2 decoder from: {decoder_ckpt}")
+    decoder_start = time.perf_counter()
 
     decoder_model = load_decoder_model(
         config_name="modded_dac_vq",
         checkpoint_path=str(decoder_ckpt),
         device=device_str,
     )
+    logger.info(f"Fish S2 decoder loaded in {time.perf_counter() - decoder_start:.1f}s")
 
     engine = TTSInferenceEngine(
         llama_queue=llama_queue,
@@ -670,6 +679,15 @@ def audio_bytes_from_comfy(audio_dict: dict) -> bytes:
     buf = io.BytesIO()
     sf.write(buf, wav, sample_rate, format="WAV", subtype="PCM_16")
     return buf.getvalue()
+
+
+def audio_duration_from_comfy(audio_dict: dict) -> float:
+    """Return a ComfyUI AUDIO dict duration in seconds."""
+    waveform = audio_dict["waveform"]
+    sample_rate = audio_dict["sample_rate"]
+    if sample_rate <= 0:
+        return 0.0
+    return float(waveform.shape[-1]) / float(sample_rate)
 
 
 def numpy_audio_to_comfy(audio_np: np.ndarray, sample_rate: int) -> dict:

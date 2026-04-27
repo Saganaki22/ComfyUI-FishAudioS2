@@ -14,6 +14,7 @@ from fish_speech.models.text2semantic.inference import (
     GenerateRequest,
     GenerateResponse,
     WrappedGenerateResponse,
+    request_cancel,
 )
 from fish_speech.utils import autocast_exclude_mps, set_seed
 from fish_speech.utils.schema import ServeTTSRequest
@@ -99,6 +100,9 @@ class TTSInferenceEngine(ReferenceLoader, VQManager):
                     _mm.throw_exception_if_processing_interrupted()
                 except ImportError:
                     pass
+                except Exception:
+                    request_cancel()
+                    raise
 
             if wrapped_result.status == "error":
                 yield InferenceResult(

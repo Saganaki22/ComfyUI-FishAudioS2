@@ -1,6 +1,7 @@
 import dataclasses
 import json
 import math
+import time
 from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
@@ -37,21 +38,28 @@ class FP8Linear(nn.Module):
         in_features: int,
         out_features: int,
         bias: bool = False,
+        device=None,
     ) -> None:
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
+        factory_kwargs = {"device": device} if device is not None else {}
         self.register_buffer(
             "qweight",
-            torch.zeros(out_features, in_features, dtype=torch.float8_e4m3fn),
+            torch.empty(
+                out_features,
+                in_features,
+                dtype=torch.float8_e4m3fn,
+                **factory_kwargs,
+            ),
         )
         self.register_buffer(
             "scale",
-            torch.ones(out_features, 1, dtype=torch.float32),
+            torch.empty(out_features, 1, dtype=torch.float32, **factory_kwargs),
         )
         if bias:
             self.bias = nn.Parameter(
-                torch.zeros(out_features, dtype=torch.bfloat16)
+                torch.zeros(out_features, dtype=torch.bfloat16, **factory_kwargs)
             )
         else:
             self.bias = None
@@ -83,16 +91,30 @@ class FP8Linear(nn.Module):
         return fp8
 
 
-def _replace_linear_with_fp8(module: nn.Module) -> None:
+def _replace_linear_with_fp8(module: nn.Module, device=None) -> None:
     """Recursively replace all nn.Linear children with FP8Linear."""
     for name, child in list(module.named_children()):
         if isinstance(child, nn.Linear):
-            fp8_layer = FP8Linear(child.in_features, child.out_features, bias=child.bias is not None)
+            fp8_layer = FP8Linear(
+                child.in_features,
+                child.out_features,
+                bias=child.bias is not None,
+                device=device,
+            )
             if child.bias is not None:
                 fp8_layer.bias = child.bias
             setattr(module, name, fp8_layer)
         else:
-            _replace_linear_with_fp8(child)
+            _replace_linear_with_fp8(child, device=device)
+
+
+def _loading_cancel_requested() -> bool:
+    try:
+        from fish_speech.models.text2semantic import inference as _inference
+        event = getattr(_inference, "_cancel_event", None)
+    except Exception:
+        event = None
+    return bool(event is not None and event.is_set())
 
 
 # ---------------------------------------------------------------------------
@@ -783,6 +805,7 @@ class BaseTransformer(nn.Module):
             index_json = path_obj / "model.safetensors.index.json"
             single_st = path_obj / "model.safetensors"
             pth_file = path_obj / "model.pth"
+            load_start = time.perf_counter()
 
             if index_json.exists():
                 from safetensors.torch import load_file as st_load_file
@@ -791,15 +814,19 @@ class BaseTransformer(nn.Module):
                     st_index = json.load(f)
                 shard_files = sorted(set(st_index["weight_map"].values()))
                 weights = OrderedDict()
-                for shard in shard_files:
+                logger.info(f"Loading checkpoint from {len(shard_files)} safetensors shard(s)")
+                for idx, shard in enumerate(shard_files, 1):
+                    logger.info(f"Loading shard {idx}/{len(shard_files)}: {shard}")
                     weights.update(st_load_file(str(path_obj / shard), device="cpu"))
                 weights = _remap_fish_qwen3_omni_keys(weights)
             elif single_st.exists():
                 from safetensors.torch import load_file as st_load_file
 
+                logger.info(f"Loading checkpoint tensors from {single_st}")
                 weights = OrderedDict(st_load_file(str(single_st), device="cpu"))
                 weights = _remap_fish_qwen3_omni_keys(weights)
             elif pth_file.exists():
+                logger.info(f"Loading checkpoint tensors from {pth_file}")
                 weights = torch.load(
                     pth_file,
                     map_location="cpu",
@@ -817,11 +844,16 @@ class BaseTransformer(nn.Module):
                         weights.pop(k)
             else:
                 raise FileNotFoundError(f"No model weights found in {path_obj}")
+            logger.info(
+                f"Loaded {len(weights)} checkpoint tensors in "
+                f"{time.perf_counter() - load_start:.1f}s"
+            )
 
             # FP8 loading: if the folder name contains "fp8", replace all
             # nn.Linear layers with FP8Linear and load quantized weights.
             # This uses pure PyTorch — no torchao required.
             if "fp8" in str(Path(path)).lower():
+                fp8_start = time.perf_counter()
                 logger.info("Detected FP8 model — loading with FP8Linear (pure PyTorch)")
 
                 # Separate fp8 qdata, scales, buffers, and normal bf16 weights
@@ -830,6 +862,7 @@ class BaseTransformer(nn.Module):
                 buf_weights = {}  # "_buf.name"          -> buffer tensor
                 normal      = {}  # everything else      -> bf16 tensor
 
+                t_stage = time.perf_counter()
                 for k, v in weights.items():
                     if k.startswith("_buf."):
                         buf_weights[k[5:]] = v  # strip "_buf." prefix
@@ -839,37 +872,74 @@ class BaseTransformer(nn.Module):
                         fp8_data[k] = v
                     else:
                         normal[k] = v
+                logger.info(
+                    f"FP8 checkpoint split in {time.perf_counter() - t_stage:.1f}s "
+                    f"({len(fp8_data)} fp8 tensors, {len(fp8_scales)} scales, "
+                    f"{len(normal)} normal tensors)"
+                )
 
                 # Load bf16 weights (embeddings, norms, etc.) first
+                t_stage = time.perf_counter()
                 model.load_state_dict(normal, strict=False, assign=True)
+                logger.info(
+                    f"Loaded non-FP8 weights in {time.perf_counter() - t_stage:.1f}s"
+                )
 
                 # Replace all nn.Linear with FP8Linear (preserves biases)
-                _replace_linear_with_fp8(model)
+                t_stage = time.perf_counter()
+                _replace_linear_with_fp8(model, device="meta")
+                logger.info(
+                    f"Created FP8Linear shell modules in {time.perf_counter() - t_stage:.1f}s"
+                )
 
-                # Copy fp8 qdata and scales into each FP8Linear
+                # Assign fp8 qdata and scales directly into each FP8Linear.
+                # This avoids creating multi-GB zero buffers and copying the
+                # checkpoint tensors into them during every cold load.
                 restored = 0
+                total_fp8 = len(fp8_data)
+                t_stage = time.perf_counter()
                 for name, module in model.named_modules():
                     if not isinstance(module, FP8Linear):
                         continue
                     param_name = f"{name}.weight"
                     if param_name in fp8_data and param_name in fp8_scales:
-                        module.qweight.copy_(fp8_data[param_name])
-                        module.scale.copy_(fp8_scales[param_name])
+                        if _loading_cancel_requested():
+                            raise RuntimeError("Fish S2 FP8 model loading cancelled.")
+                        module.qweight = fp8_data[param_name]
+                        scale = fp8_scales[param_name]
+                        if scale.ndim == 1:
+                            scale = scale[:, None]
+                        module.scale = scale
                         restored += 1
+                logger.info(
+                    f"Assigned FP8 weights in {time.perf_counter() - t_stage:.1f}s"
+                )
 
                 # Restore buffers (freqs_cis, causal_mask, etc.)
+                t_stage = time.perf_counter()
+                buf_sd = {n: p for n, p in model.named_buffers()}
                 for k, v in buf_weights.items():
-                    # Walk the model state dict to find the buffer
-                    buf_sd = {n: p for n, p in model.named_buffers()}
                     if k in buf_sd:
-                        buf_sd[k].copy_(v)
+                        if _loading_cancel_requested():
+                            raise RuntimeError("Fish S2 FP8 model loading cancelled.")
+                        module_name, _, buffer_name = k.rpartition(".")
+                        owner = model.get_submodule(module_name) if module_name else model
+                        setattr(owner, buffer_name, v)
+                logger.info(
+                    f"Restored FP8 buffers in {time.perf_counter() - t_stage:.1f}s"
+                )
 
                 logger.info(
                     f"FP8 weights restored: {restored} layers "
-                    f"({len(fp8_data)} fp8 tensors + {len(fp8_scales)} scales)"
+                    f"({len(fp8_data)} fp8 tensors + {len(fp8_scales)} scales) "
+                    f"in {time.perf_counter() - fp8_start:.1f}s"
                 )
             else:
+                t_stage = time.perf_counter()
                 model.load_state_dict(weights, strict=False, assign=True)
+                logger.info(
+                    f"Restored model weights in {time.perf_counter() - t_stage:.1f}s"
+                )
 
         model.tokenizer = tokenizer
 
